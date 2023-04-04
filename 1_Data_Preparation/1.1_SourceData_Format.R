@@ -300,7 +300,21 @@ CITES_Countries_List <- data.frame(Country = unique(c(unique(CITES_Countries$Exp
 
 write.csv(CITES_Countries_List, "Outputs/CITES/Full_CITES_Countries_List.csv", na = "")
 
-#### Get the neighbour country format ####
+#### Get register data ####
+
+CaptiveRegister <- data.table::fread("Data/CITES_CaptiveRegister_Summary.csv", na.strings = "") %>% select(1:3)
+CITES_Parties <- data.table::fread("Data/CITES_Parties.csv", na.strings = "") %>% select(2:3) %>% 
+  rename("Country" = 1, "ISO" = 2)
+
+
+CaptiveRegister <- CaptiveRegister %>% 
+  fill(Country, .direction = "down") %>%
+  fill(Code, .direction = "down") %>% 
+  left_join(CITES_Parties)
+
+write.csv(CaptiveRegister, "Outputs/CITES/CaptiveRegister_List.csv", na = "")
+
+#### Get the neighbor country format ####
 Neighbouring_Countries <- data.table::fread("Data/Neighbouring_Countries.csv", na.strings = "")
 
 Long_form_nei <- Neighbouring_Countries %>% 
