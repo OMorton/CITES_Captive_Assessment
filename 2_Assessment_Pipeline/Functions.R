@@ -549,10 +549,10 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
            ## of 0 / 0 in checks 7 and 8, this is a catch all for those instances
            ## records automatically pass as if there is no reported trade there 
            ## cannot be source switching.
+           Check_6 = ifelse((Capt_Vol_Contrast + Wild_Vol_Contrast) == 0,
+                            FALSE, Check_6),
            Check_7 = ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast) == 0,
-                            FALSE, TRUE),
-           Check_8 = ifelse((Capt_Vol_Contrast + Wild_Vol_Contrast) == 0,
-                            FALSE, TRUE))
+                            FALSE, Check_7))
   
 if(Class_for_traits == "Aves"){
   
