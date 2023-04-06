@@ -540,7 +540,19 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
   ) %>%
     ungroup() %>%
     ## Catch for species that were never imported 
-    mutate(Check_12 = ifelse(is.na(Check_12), TRUE, Check_12))
+    mutate(Check_12 = ifelse(is.na(Check_12), TRUE, Check_12)) %>%
+    ## If the exporter is a range state (Check 10), Check 11 and 12 automatically
+    ## pass.
+    mutate(Check_11 = ifelse(Check_10 == FALSE, FALSE, Check_11),
+           Check_12 = ifelse(Check_10 == FALSE, FALSE, Check_12),
+           ## If the total contrast source trade was zero it generates instances
+           ## of 0 / 0 in checks 7 and 8, this is a catch all for those instances
+           ## records automatically pass as if there is no reported trade there 
+           ## cannot be source switching.
+           Check_7 = ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast) == 0,
+                            FALSE, TRUE),
+           Check_8 = ifelse((Capt_Vol_Contrast + Wild_Vol_Contrast) == 0,
+                            FALSE, TRUE))
   
 if(Class_for_traits == "Aves"){
   
