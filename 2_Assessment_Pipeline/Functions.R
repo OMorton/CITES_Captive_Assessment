@@ -360,7 +360,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     ## The criteria applied uses multipliers - justification unclear.
     ## this currently just returns the volume and can be used to weight trades
     ## later.
-    Check_3 = case_when(IUCN_code %in% c("NT", "VU", "EN", "CR", "DD", "EX", "EW") &
+    Check_3 = case_when(IUCN_code %in% c("NT", "VU", "EN", "CR", "DD", "EX", "EW", "Not assessed") &
                         Vol > 12.5 ~ TRUE,
                         IUCN_code == "LC" & Vol > 50 ~ TRUE,
                         TRUE ~ FALSE),
@@ -703,4 +703,56 @@ checks_summary <- function(data, groups, App1_only = FALSE, format = "long") {
   }
   
   return(sum)
+}
+
+
+##### Top 10 species data format ####
+
+ID_dataseries <- function(data = data, ID_list) {
+  Output <- data.frame()
+  
+  for (i in 1:length(ID_list)) {
+    
+    ID <- ID_list[i]
+  
+  Capt_vol <- data %>% filter(ROW_ID == ID) %>%
+    select(ROW_ID, Taxon, Exporter, Year_5_vol_Capt, Year_4_vol_Capt, Year_3_vol_Capt, 
+           Year_2_vol_Capt, Year_1_vol_Capt, Year_0_vol_Capt) %>%
+    pivot_longer(!c(ROW_ID, Taxon, Exporter), names_to = "var", values_to = "Vol") %>% 
+    select(Vol, ROW_ID, Taxon, Exporter) %>%
+    mutate(Type = "Capt_vol")
+  
+  Wild_vol <- data %>% filter(ROW_ID == ID) %>%
+    select(ROW_ID, Taxon, Exporter, Year_5_vol_Wild, Year_4_vol_Wild, Year_3_vol_Wild, 
+           Year_2_vol_Wild, Year_1_vol_Wild, Year_0_vol_Wild) %>%
+    pivot_longer(!c(ROW_ID, Taxon, Exporter), names_to = "var", values_to = "Vol") %>% 
+    select(Vol, ROW_ID, Taxon, Exporter) %>%  mutate(Type = "Wild_vol")
+  
+  Ranch_vol <- data %>% filter(ROW_ID == ID) %>%
+    select(ROW_ID,Taxon, Exporter, Year_5_vol_Ranch, Year_4_vol_Ranch, Year_3_vol_Ranch, 
+           Year_2_vol_Ranch, Year_1_vol_Ranch, Year_0_vol_Ranch) %>%
+    pivot_longer(!c(ROW_ID, Taxon, Exporter), names_to = "var", values_to = "Vol") %>% 
+    select(Vol, ROW_ID, Taxon, Exporter) %>%  mutate(Type = "Ranch_vol")
+  
+  Contr_capt <- data %>% filter(ROW_ID == ID) %>% 
+    select(Capt_Vol_Contrast, ROW_ID, Taxon, Year, Exporter) %>%
+    rename("Vol" = 1) %>% mutate( Type = "Capt_contast")
+  Contr_wild <- data %>% filter(ROW_ID == ID) %>% 
+    select(Wild_Vol_Contrast, ROW_ID, Taxon, Year, Exporter) %>%
+    rename("Vol" = 1) %>% mutate( Type = "Wild_contast")
+  Contr_ranch <- data %>% filter(ROW_ID == ID) %>% 
+    select(Ranch_Vol_Contrast, ROW_ID, Taxon, Year, Exporter) %>%
+    rename("Vol" = 1) %>% mutate( Type = "Ranch_contast")
+  
+  Year_series <- data %>% filter(ROW_ID == ID) %>%
+    select(ROW_ID, Year_5_Capt, Year_4_Capt, Year_3_Capt,
+           Year_2_Capt, Year_1_Capt, Year_0_Capt) %>%
+    pivot_longer(!ROW_ID, names_to = "var", values_to = "Year") %>% select(Year)
+  
+  dat <- rbind(cbind(Capt_vol, Year_series), cbind(Wild_vol, Year_series), 
+               cbind(Ranch_vol, Year_series), Contr_capt, Contr_wild, Contr_ranch)
+  
+  Output <- rbind(Output, dat)
+  }
+return(Output)
 }
