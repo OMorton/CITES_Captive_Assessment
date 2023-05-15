@@ -14,7 +14,7 @@ library(tidyverse)
 CITES_Country_List <- data.table::fread("Outputs/CITES/Full_CITES_Countries_List.csv", na.strings = "", header = TRUE) %>% select(-V1)
 Distribution_List <- data.table::fread("Outputs/Countries/Distribution_List.csv", na.strings = "", header = TRUE) %>% select(-V1)
 Neighbours_List <- data.table::fread("Outputs/Countries/Neighbours_List.csv", na.strings = "", header = TRUE) %>% select(-V1)
-Aves_IUCN <- data.table::fread("Outputs/IUCN/Bird_IUCN_2000_2020.csv")
+Taxa_IUCN <- data.table::fread("Outputs/IUCN/BirdRept_IUCN_2000_2020.csv")
 Bird_et_al <- data.table::fread("Data/Bird_et_al_2020.csv")
 
 #### Species taxonomy ####
@@ -23,7 +23,7 @@ Bird_et_al <- data.table::fread("Data/Bird_et_al_2020.csv")
 ## though in some cases this is out of date. This is for consistency with policy and CITES documents.
 
 ## CITESdb species
-CITES_Aves_List <- Aves_IUCN %>% distinct(Taxon, IUCNName)
+CITES_Taxa_List <- Taxa_IUCN %>% distinct(Taxon, IUCNName)
 ## Distrib species
 Distr_Check_List <- Distribution_List %>% distinct(CITES_name) %>% mutate(Check = "Present_Distr")
 ## LH species
@@ -36,7 +36,7 @@ LH_Check_List <- Bird_et_al %>% distinct(Taxon)  %>% mutate(Check = "Present_Dis
 ## Needs discussion exactly where speciesplus data is drawn from as it differs significantly to the redlist 
 ## for some species, better resolution for ssps but also seems to miss more range countries for some
 ## full species e.g Agapornis roseicollis
-Check_Distr <- left_join(CITES_Aves_List, Distr_Check_List, by = c("Taxon" = "CITES_name")) 
+Check_Distr <- left_join(CITES_Taxa_List, Distr_Check_List, by = c("Taxon" = "CITES_name")) 
 
 Distr_na <- filter(Check_Distr, is.na(Check))
 apikey <- "a3fc116c122aefc621329055aeae8f67483e575c518acc14fcb77709bd94f6a2"
@@ -76,17 +76,33 @@ for(i in 1:nrow(Distr_na)){ # would have used for(sp in speciesList) but need i 
 
 filter(df, is.na(code)) ## only the two species (extinct and hybrid)
 
+manual <- rbind(
+  data.frame(IUCNName = "Pelusios castaneus", Taxon = "Pelusios castaneus", 
+           code = c("AO", "BJ", "BF", "CV", "CM", "CF", "CG", "CI", "CD",
+                    "GQ", "GA", "GM", "GP", "GN", "GW", "LR", "ML", "NG",
+                    "RW", "ST", "SN", "SC", "SL", "TG")),
+  data.frame(IUCNName = "Pelusios gabonensis", Taxon = "Pelusios gabonensis",
+             code = c("AO", "BI", "CM", "CF", "CG", "CI", "CD", "GQ", "GA",
+                      "GH", "LR", "NG", "ST", "UG", "TZ")),
+  data.frame(IUCNName = "Lophura imperialis", Taxon = "Lophura imperialis",
+            code = "VN"),
+  data.frame(IUCNName = "Anas oustaleti", Taxon = "Anas oustaleti",
+             code = NA)
+  )
+
+df <- rbind(filter(df, !is.na(code)), manual)
+
 ## Get the distribution naming resolved
-Distribution_full <- Distribution_List %>% select(-V1) %>% 
+Distribution_full <- Distribution_List %>%
   mutate(IUCNName = NA, Distr_Source = "SpeciesPlus") %>%
   rbind(rename(df, "CITES_name" = "Taxon", "Distribution" = "code") %>% 
           mutate(Distr_Source = "IUCNRedList")) %>% 
   mutate(Distr_name = ifelse(is.na(IUCNName), CITES_name, IUCNName)) %>%
   select(-IUCNName) %>%
-  left_join(CITES_Aves_List, by = c("CITES_name" = "Taxon")) %>%
-  filter(CITES_name %in% CITES_Aves_List$Taxon)
+  left_join(CITES_Taxa_List, by = c("CITES_name" = "Taxon")) %>%
+  filter(CITES_name %in% CITES_Taxa_List$Taxon)
 
-n_distinct(Distribution_full$CITES_name) ## 805
+n_distinct(Distribution_full$CITES_name) ## 1368
  
 ## Resolve LH data naming
 check <- left_join(Distribution_full, select(Bird_et_al, Sequence, Taxon), by = c("IUCNName" = "Taxon"))
@@ -120,7 +136,7 @@ Distribution_full <- Distribution_full %>% mutate(LH_name = case_when(IUCNName =
 check2 <- left_join(Distribution_full, select(Bird_et_al, Sequence, Taxon), by = c("LH_name" = "Taxon"))
 check2 %>% filter(is.na (Sequence)) %>% distinct(CITES_name, IUCNName) ## the EX and hybrid
 
-## Coverage is complete for all LH Traits (bar the two species)
+## Coverage is complete for all LH Traits (bar the two species) and all the reptiles
 check_cover <- left_join(Distribution_full, Bird_et_al, by = c("LH_name" = "Taxon")) %>% 
   summarise(across(everything(), ~ sum(is.na(.))))
 

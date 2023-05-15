@@ -383,7 +383,7 @@ Neighbouring_Countries <- data.table::fread("Data/Neighbouring_Countries.csv", n
 
 Long_form_nei <- Neighbouring_Countries %>% 
   select(cca2, region, subregion, borders) %>% 
-  tidyr::separate_longer_delim(borders, delim = ",") %>%
+  separate_rows(borders) %>%
   rename("Country" = "cca2") %>%
   left_join( select(Neighbouring_Countries, cca2, cca3), 
              by = c("borders" = "cca3")) %>% rename("borders2" = "cca2")
@@ -395,10 +395,11 @@ Distribution_Countries <- data.table::fread("Data/Distribution_Countries.csv", n
 
 Long_form_dis <- Distribution_Countries %>% 
   select(`Scientific Name`, All_DistributionISOCodes) %>% 
-  tidyr::separate_longer_delim(All_DistributionISOCodes, delim = ",") %>%
+  separate_rows(All_DistributionISOCodes) %>%
   rename("CITES_name" = "Scientific Name", "Distribution" = "All_DistributionISOCodes")
 
 write.csv(Long_form_dis, "Outputs/Countries/Distribution_List.csv", na = "")
+
 #### Listed time series ####
 
 CITES_Species <- CITES_TRUE %>% 
