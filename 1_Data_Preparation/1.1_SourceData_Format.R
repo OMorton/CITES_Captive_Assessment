@@ -34,22 +34,22 @@ CITES_TRUE <- CITES_MASTER %>% filter(Origin == Exporter  | is.na(Origin))
 
 ## This will be used for trait data, range data and Listing data matching.
 ## Focus on only the target taxa and time frame and remove ambiguous records using "ssp" or "hybrid"
-## 941,698 records
-CITES_Aves <- CITES_TRUE %>% 
-  filter(Class %in% c("Aves"), Year %in% 2000:2020,
+## 908,843 records
+CITES_Taxa <- CITES_TRUE %>% 
+  filter(Class %in% c("Aves", "Reptilia"), Year %in% 2000:2020,
          Source %in% c("C", "D", "F", "R")) 
 
-## 805 C, D, F, R Bird species (2000 - 2020)
-CITES_Aves_List <- data.frame(Taxon = unique(CITES_Aves$Taxon)) %>%
+## 1368 C, D, F, R Bird species (2000 - 2020)
+CITES_Taxa_List <- data.frame(Taxon = unique(CITES_Taxa$Taxon)) %>%
   filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon))
 
-write.csv(CITES_Aves_List, "Outputs/CITES/Full_CITES_Aves_List.csv")
+write.csv(CITES_Taxa_List, "Outputs/CITES/Full_CITES_Taxa_List.csv")
 
 #### Get the IUCN Statuses ####
 
 ## Results in 805 unique "species" 
 ## Get list and correct names
-List_update <- CITES_Aves_List %>% mutate(IUCNName = case_when(Taxon == "Aceros cassidix" ~ "Rhyticeros cassidix",
+List_update <- CITES_Taxa_List %>% mutate(IUCNName = case_when(Taxon == "Aceros cassidix" ~ "Rhyticeros cassidix",
                                                                Taxon == "Aceros corrugatus" ~"Rhabdotorrhinus corrugatus",
                                                                Taxon == "Aceros leucocephalus" ~ "Rhabdotorrhinus leucocephalus",
                                                                Taxon == "Aglaiocercus kingi" ~ "Aglaiocercus kingii",
@@ -182,6 +182,68 @@ List_update <- CITES_Aves_List %>% mutate(IUCNName = case_when(Taxon == "Aceros 
                                                                Taxon == "Oroaetus isidori" ~ "Spizaetus isidori",
                                                                Taxon == "Milvago chimango" ~ "Phalcoboenus chimango",
                                                                Taxon == "Pionopsitta pulchra" ~ "Pyrilia pulchra",
+                                                               ## repts
+                                                               Taxon == "Aldabrachelys gigantea" ~ "Geochelone gigantea",
+                                                               Taxon == "Boa constrictor occidentalis" ~ "Boa constrictor",
+                                                               Taxon == "Caiman crocodilus fuscus" ~ "Caiman crocodilus",
+                                                               Taxon == "Chelonoidis carbonarius" ~ "Chelonoidis carbonarius", ## NE
+                                                               Taxon == "Chelonoidis denticulatus" ~ "Chelonoidis denticulata",
+                                                               Taxon == "Cyclagras gigas" ~ "Hydrodynastes gigas",
+                                                               Taxon == "Epicrates cenchria cenchria" ~ "Epicrates cenchria",
+                                                               Taxon == "Epicrates fordii" ~ "Chilabothrus fordii",
+                                                               Taxon == "Homopus signatus" ~ "Chersobius signatus",
+                                                               Taxon == "Karusaurus polyzonus" ~ "Karusasaurus polyzonus",
+                                                               Taxon == "Mauremys iversoni" ~ "Mauremys iversoni", ## hybrid
+                                                               Taxon == "Pelomedusa subrufa" ~ "Pelomedusa galeata",
+                                                               Taxon == "Python molurus molurus" ~ "Python molurus",
+                                                               Taxon == "Python timoriensis" ~ "Malayopython timoriensis",
+                                                               Taxon == "Trachemys scripta elegans" ~ "Trachemys scripta",
+                                                               Taxon == "Caiman crocodilus apaporiensis" ~ "Caiman crocodilus",
+                                                               Taxon == "Caiman crocodilus crocodilus" ~ "Caiman crocodilus",
+                                                               Taxon == "Caiman crocodilus fuscus" ~ "Caiman crocodilus",
+                                                               Taxon == "Caiman crocodilus yacare" ~ "Caiman yacare",
+                                                               Taxon == "Epicrates angulifer" ~ "Chilabothrus angulifer",
+                                                               Taxon == "Epicrates subflavus" ~ "Chilabothrus subflavus",
+                                                               Taxon == "Gongylophis colubrinus" ~ "Eryx colubrinus",
+                                                               Taxon == "Gongylophis conicus" ~ "Eryx conicus",
+                                                               Taxon == "Kinixys belliana" ~ "Kinixys belliana", ## NE
+                                                               Taxon == "Ptyas mucosus" ~ "Ptyas mucosa",
+                                                               Taxon == "Python reticulatus" ~ "Malayopython reticulatus",
+                                                               Taxon == "Vipera wagneri" ~ "Montivipera wagneri",
+                                                               Taxon == "Elaphe radiata" ~ "Coelognathus radiatus",
+                                                               Taxon == "Epicrates inornatus" ~ "Chilabothrus inornatus",
+                                                               Taxon == "Gongylophis muelleri" ~ "Eryx muelleri",
+                                                               Taxon == "Phelsuma andamanense" ~ "Phelsuma andamanensis",
+                                                               Taxon == "Enhydris bocourti" ~ "Subsessor bocourti",
+                                                               Taxon == "Epicrates chrysogaster" ~ "Chilabothrus chrysogaster",
+                                                               Taxon == "Crotalus durissus unicolor" ~ "Crotalus durissus",
+                                                               Taxon == "Kinixys spekii" ~ "Kinixys spekii", ## NE
+                                                               Taxon == "Pelodiscus axenaria" ~ "Pelodiscus axenaria", ## NE
+                                                               Taxon == "Podocnemis vogli" ~ "Podocnemis vogli", ## NE
+                                                               Taxon == "Varanus ornatus" ~ "Varanus niloticus",
+                                                               Taxon == "Varanus similis" ~ "Varanus scalaris",
+                                                               Taxon == "Psammobates oculifer" ~ "Psammobates oculifer", ## NE
+                                                               Taxon == "Cyclura ricordi" ~ "Cyclura ricordii",
+                                                               Taxon == "Woodworthia chrysosireticus" ~ "Woodworthia chrysosiretica", 
+                                                               Taxon == "Phrynosoma cerroense" ~ "Phrynosoma cerroense", ## NE
+                                                               Taxon == "Morelia nauta" ~ "Simalia nauta",
+                                                               Taxon == "Crocodylus cataphractus" ~ "Mecistops cataphractus",
+                                                               Taxon == "Lapemis curtus" ~ "Hydrophis curtus",
+                                                               Taxon == "Leiopython hoserae" ~ "Leiopython meridionalis",
+                                                               Taxon == "Epicrates striatus" ~ "Chilabothrus striatus",
+                                                               Taxon == "Epicrates gracilis" ~ "Chilabothrus gracilis",
+                                                               Taxon == "Woodworthia maculatus" ~ "Woodworthia maculata",
+                                                               Taxon == "Psammobates tentorius trimeni" ~ "Psammobates tentorius",
+                                                               Taxon == "Trimeresurus mangshanensis" ~ "Protobothrops mangshanensis",
+                                                               Taxon == "Uromastyx nigriventris" ~ "Uromastyx nigriventris", ## NE
+                                                               Taxon == "Heloderma horridum charlesbogerti" ~ "Heloderma charlesbogerti",
+                                                               Taxon == "Morelia clastolepis" ~ "Simalia clastolepis",
+                                                               Taxon == "Mauremys pritchardi" ~ "Mauremys reevesii",
+                                                               Taxon == "Pelusios castaneus" ~ "Pelusios castaneus", ## NE
+                                                               Taxon == "Pelusios gabonensis" ~ "Pelusios gabonensis", ## NE
+                                                               Taxon == "Rhacodactylus ciliatus" ~ "Correlophus ciliatus",
+                                                               Taxon == "Kinixys zombensis" ~ "Kinixys zombensis", ## NE
+                                                               Taxon == "Morelia tracyae" ~ "Simalia tracyae",
                                                                TRUE ~ Taxon))
 
 ## get key
@@ -226,14 +288,15 @@ for(i in 1:nrow(List_update)){ # would have used for(sp in speciesList) but need
   }
 }
 
+## Got this fro repts and aves
 #write.csv(df, "Outputs/IUCN/IUCN_API_Out.csv")  
 df <- read.csv("Outputs/IUCN/IUCN_API_Out.csv") %>% select(-X)
 
-## one hybird and one extinct species 
+## two hybirds, 11 NA, and one extinct species 
 df %>% filter(is.na(Year))
 df_all <- left_join(df, List_update)
 check <- df_all %>% group_by(Taxon) %>% filter(any(IUCN_code %in% c("CT", "NR", "K", "R", "T", "V", "E", "I", "nt", NA)))
-length(unique(df_all$Taxon)) ## 805
+length(unique(df_all$Taxon)) ## 1368
 
 ## Therefore remove these
 Historic_IUCN <- df_all %>% 
@@ -241,24 +304,25 @@ Historic_IUCN <- df_all %>%
   mutate(Year = if_else(is.na(Year), 2000, as.numeric(Year))) %>%
   filter(!IUCN_code %in% c("CT", "NR", "K", "R", "T", "V", "E", "I", "nt"))
 
-length(unique(Historic_IUCN$Taxon)) ## 805
+length(unique(Historic_IUCN$Taxon)) ## 1368
 
 ## Cyanopsitta spixii, Strigops habroptila, Psephotus pulcherrimus
 ## Keep these but flag them
-Historic_IUCN %>% filter(IUCN_code %in% c("EX", "EW"))
+Historic_IUCN %>% filter(IUCN_code %in% c("EX", "EW", "Ex"))
 
 ## Convert the 1994 system to post-2000
 Historic_IUCN_up <- Historic_IUCN %>%
   mutate(IUCN_code = replace(IUCN_code, IUCN_code == "LR/lc", "LC"),
          IUCN_code = replace(IUCN_code, IUCN_code == "LR/nt", "NT"),
-         IUCN_code = replace(IUCN_code, IUCN_code == "LR/cd", "NT"))
+         IUCN_code = replace(IUCN_code, IUCN_code == "LR/cd", "NT"),
+         IUCN_code = replace(IUCN_code, IUCN_code == "Ex", "EX"))
 
 ## Check removal and conversion left only the post 2001 framework
 unique(Historic_IUCN_up$IUCN_code)
-unique(Historic_IUCN_up$Taxon) ## 805
+unique(Historic_IUCN_up$Taxon) ## 1368
 
 ## Backbone of values 2000 - 2020
-backbone <- expand.grid(Year = as.integer(2000:2022), Taxon = unique(Historic_IUCN_up$Taxon))
+backbone <- expand.grid(Year = as.integer(1988:2022), Taxon = unique(Historic_IUCN_up$Taxon))
 
 ## left join this and create your unrolled status
 ## Some species in trade before being IUCN assessed these are the NA values
@@ -281,19 +345,19 @@ df_new <- left_join(backbone, Historic_IUCN_up) %>%
 
 ## Now we have a clean time series of all statuses for all species 2000 - 2020 (0 - 20)
 ## Note for completeness we keep the Lophura hybrid
-length(unique(df_new$Taxon)) ## 805 species
+length(unique(df_new$Taxon)) ## 1368 species
 
 
 ## Check no species were assessed twice in one year
 df_new %>% group_by(Year, Taxon) %>% tally() %>% filter(n != 1)
-
-write.csv(df_new, "Outputs/IUCN/Bird_IUCN_2000_2020.csv")
+df_new <- df_new %>% filter(!(Year == 2018 & Taxon == "Homopus signatus" & IUCN_code == "VU"))
+write.csv(df_new, "Outputs/IUCN/BirdRept_IUCN_2000_2020.csv")
 
 #### Get the country list ####
 ## Get all countries that are involved in the trade of the focal species.
 ## we can then cross reference this with the country distribution and border data we have
 ## to ensure that all countries have a match
-CITES_Countries <- CITES_MASTER %>% filter(Taxon %in% CITES_Aves_List$Taxon)
+CITES_Countries <- CITES_MASTER %>% filter(Taxon %in% CITES_Taxa_List$Taxon)
 
 CITES_Countries_List <- data.frame(Country = unique(c(unique(CITES_Countries$Exporter),
                                                         unique(CITES_Countries$Importer))))
@@ -338,10 +402,12 @@ write.csv(Long_form_dis, "Outputs/Countries/Distribution_List.csv", na = "")
 #### Listed time series ####
 
 CITES_Species <- CITES_TRUE %>% 
-  filter(Class %in% c("Aves"), Year %in% 2000:2020,
+  filter(Class %in% c("Aves", "Reptilia"), Year %in% 2000:2020,
          Source %in% c("C", "D", "F", "R")) %>%
   group_by(Taxon) %>% slice(1) %>% select(Class, Order, Family, Genus, Taxon) %>% ungroup() %>%
   filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon))
+
+length(unique(CITES_Species$Taxon)) ## 1368
 
 ## Read in the cites historic listings data
 Historic_CITES <- data.table::fread("Data/History_of_CITES_Listings_2021.csv") %>% 
@@ -357,7 +423,7 @@ Addition <- Historic_CITES %>% group_by(Class, Order, Family, Genus, FullName, Y
   rename(Taxon = FullName) %>%
   ungroup() %>%
   mutate(across(everything(), ~ifelse(.=="", NA, as.character(.)))) %>%
-  filter(Class == "Aves", ChangeType == "ADDITION") %>% ungroup()
+  filter(Class %in% c("Aves", "Reptilia"), ChangeType == "ADDITION") %>% ungroup()
 
 Deletion <- Historic_CITES %>% group_by(Class, Order, Family, Genus, FullName, Year, ChangeType, Appendix) %>% 
   tally() %>%
@@ -367,7 +433,7 @@ Deletion <- Historic_CITES %>% group_by(Class, Order, Family, Genus, FullName, Y
   rename(Taxon = FullName) %>%
   ungroup() %>%
   mutate(across(everything(), ~ifelse(.=="", NA, as.character(.)))) %>%
-  filter(Class == "Aves", ChangeType == "DELETION") %>% ungroup()
+  filter(Class %in% c("Aves", "Reptilia"), ChangeType == "DELETION") %>% ungroup()
 
 ## First match all species level CITES listings
 A_SP <- Addition %>% filter(!is.na(Taxon)) %>% select(Taxon, Year, Appendix)
@@ -393,7 +459,7 @@ Sp_series <- expand.grid(Taxon = unique(sp_done_A$Taxon), Year = 1975:2020) %>%
   mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix))
   
 check <- Sp_series %>% group_by(Taxon) %>% filter(n_distinct(Appendix) > 1)
-n_distinct(Sp_series$Taxon) ## 337
+n_distinct(Sp_series$Taxon) ## 538
 
 ## Second match at genus level
 genus_to_match <- Sp_join_A %>% filter(is.na(Year)) %>% select(-Year) %>% select(Taxon, Genus, Family, Order)
@@ -420,7 +486,7 @@ GEN_series <- expand.grid(Taxon = unique(GEN_done_A$Taxon), Year = 1975:2020) %>
   filter(!is.na(Appendix)) %>%
   mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix))
 
-n_distinct(GEN_series$Taxon) ## 84
+n_distinct(GEN_series$Taxon) ## 376
 
 
 ## third match at family level
@@ -450,7 +516,7 @@ FAM_series <- expand.grid(Taxon = unique(FAM_done_A$Taxon), Year = 1975:2020) %>
   filter(!is.na(Appendix)) %>%
   mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix))
 
-n_distinct(FAM_series$Taxon) ## 313
+n_distinct(FAM_series$Taxon) ## 357
 
 ## Fourth match at order level
 Ord_to_match <- FAM_join_A %>% filter(is.na(Year)) %>% select(-Year) %>% select(Taxon, Family, Order)
@@ -479,13 +545,13 @@ ORD_series <- expand.grid(Taxon = unique(ORD_done_A$Taxon), Year = 1975:2020) %>
   filter(!is.na(Appendix)) %>%
   mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix))
 
-n_distinct(ORD_series$Taxon) ## 58
+n_distinct(ORD_series$Taxon) ## 59
 
 All_sp_fl <- rbind(Sp_series, GEN_series, FAM_series, ORD_series)
 n_distinct(All_sp_fl$Taxon)
 
-SP <-CITES_Aves_List %>% filter(!Taxon %in% unique(All_sp_fl$Taxon))
-checks <- CITES_Aves %>% filter(Taxon %in% unique(SP$Taxon))
+SP <-CITES_Taxa_List %>% filter(!Taxon %in% unique(All_sp_fl$Taxon))
+checks <- CITES_Taxa %>% filter(Taxon %in% unique(SP$Taxon))
 
 ## 11 species recorded in the database are actually never listed
 ## only 2 species with odd series (Lophura hatinhensis and Poephila cincta), we note in both cases
@@ -493,5 +559,7 @@ checks <- CITES_Aves %>% filter(Taxon %in% unique(SP$Taxon))
 ## and only the ssp P. c. cincta is listed. 
 ## Current approach will be to correct all names in the data set.
 All_sp_fl %>% filter(Year >1999)
+
+All_sp_fl <- left_join(All_sp_fl, CITES_Species)
 
 write.csv(All_sp_fl, "Outputs/CITES/Listed_Time_Series.csv")
