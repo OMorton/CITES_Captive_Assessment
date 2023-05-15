@@ -52,7 +52,7 @@ data_prep <- function(CITES_path = "G:/My Drive/TUoS/Data_Sources/CITES/CITES_al
   ## remove all reports where the origin is stated and is not the same as the exporter.
   CITES_TRUE <- CITES_MASTER %>% filter(Origin == Exporter  | is.na(Origin), 
                                         Unit == "Number of specimens" | is.na(Unit),
-                                        Class == focal_class) %>%
+                                        Class %in% focal_class) %>%
     ## correct the two potential misidents in the data
     mutate(Taxon = ifelse(Taxon == "Poephila cincta", "Poephila cincta cincta", Taxon),
            Taxon = ifelse(Taxon == "Lophura hatinhensis", "Lophura edwardsi", Taxon))
@@ -97,7 +97,7 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
   ## Focus on only the target taxa and time frame and remove ambiguous records using "ssp" or "hybrid"
   ## 30,868 records
   CITES_Focal_Capt <- CITES_TRUE %>% 
-    filter(Class == focal_class, Year %in% 2000:2020,
+    filter(Class %in% focal_class, Year %in% 2000:2020,
            ## R could also be added to align with UNEP
            Source %in% c("C", "D", "F"), 
            ## Focus on ER trade in number of individuals
@@ -129,7 +129,7 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
   
   ## get the live imports of any kind per importer per year
   Historic_live_imports <- CITES_TRUE %>% 
-    filter(Class == focal_class, Term == "live") %>%
+    filter(Class %in% focal_class, Term == "live") %>%
     group_by(Year, Taxon, Class, Importer) %>% 
     summarise(Vol = sum(Quantity)) %>%
     filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon)) %>% 
@@ -153,7 +153,7 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
     }
     
     CITES_TRUE %>% 
-      filter(Class == focal_class, Year %in% 2000:2020,
+      filter(Class %in% focal_class, Year %in% 2000:2020,
              Source %in% codes, 
              Reporter.type == contrast_reporter, Unit == "Number of specimens" | is.na(Unit), 
              Appendix != "N") %>%
@@ -186,7 +186,7 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
             lab = "Wild"
           }
           CITES_Taxa_Hist <- CITES_TRUE %>% 
-          filter(Class == focal_class, Year %in% 1995:2020,
+          filter(Class %in% focal_class, Year %in% 1995:2020,
                  ## R could also be added to align with UNEP
                  Source %in% codes, 
                  Reporter.type == focal_reporter, Unit == "Number of specimens" | is.na(Unit), 
@@ -251,26 +251,26 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
   cat(paste0("Writing out data to ", output_path))
   
   write.csv(Full_data_to_check, 
-            paste0(output_path, "Full_data_to_check_", focal_class, "_", focal_level, "_", focal_reporter, "R.csv"), na = "")
+            paste0(output_path, "Full_data_to_check_", paste(focal_class, collapse = ""), "_", focal_level, "_", focal_reporter, "R.csv"), na = "")
   
   write.csv(CITES_Focal_Capt, 
-            paste0(output_path, "Capt_", focal_class, "_", focal_level, "_", focal_reporter, "R.csv"), na = "")
+            paste0(output_path, "Capt_", paste(focal_class, collapse = ""), "_", focal_level, "_", focal_reporter, "R.csv"), na = "")
   write.csv(Historic_live_imports, 
-            paste0(output_path, "All_historic_live_imports_", focal_class, "_", focal_level, ".csv"), na = "") 
+            paste0(output_path, "All_historic_live_imports_", paste(focal_class, collapse = ""), "_", focal_level, ".csv"), na = "") 
   
   write.csv(CITES_Capt_Contrast, 
-            paste0(output_path, "Capt_",focal_class, "_", focal_level, "_", contrast_reporter, "R.csv"), na = "")
+            paste0(output_path, "Capt_",paste(focal_class, collapse = ""), "_", focal_level, "_", contrast_reporter, "R.csv"), na = "")
   write.csv(CITES_Wild_Contrast, 
-            paste0(output_path, "Wild_",focal_class, "_", focal_level, "_", contrast_reporter, "R.csv"), na = "")
+            paste0(output_path, "Wild_",paste(focal_class, collapse = ""), "_", focal_level, "_", contrast_reporter, "R.csv"), na = "")
   write.csv(CITES_Ranch_Contrast, 
-            paste0(output_path, "Ranch_",focal_class, "_", focal_level, "_", contrast_reporter, "R.csv"), na = "")
+            paste0(output_path, "Ranch_",paste(focal_class, collapse = ""), "_", focal_level, "_", contrast_reporter, "R.csv"), na = "")
   
   write.csv(CITES_focal_hist_capt, 
-            paste0(output_path, "Hist_Capt_", focal_class, "_", focal_level, "_", focal_reporter, "R.csv"), na = "")
+            paste0(output_path, "Hist_Capt_", paste(focal_class, collapse = ""), "_", focal_level, "_", focal_reporter, "R.csv"), na = "")
   write.csv(CITES_focal_hist_wild, 
-            paste0(output_path, "Hist_Wild_", focal_class, "_", focal_level, "_", focal_reporter, "R.csv"), na = "")
+            paste0(output_path, "Hist_Wild_", paste(focal_class, collapse = ""), "_", focal_level, "_", focal_reporter, "R.csv"), na = "")
   write.csv(CITES_focal_hist_ranch, 
-            paste0(output_path, "Hist_Ranch_", focal_class, "_", focal_level, "_", focal_reporter, "R.csv"), na = "")
+            paste0(output_path, "Hist_Ranch_", paste(focal_class, collapse = ""), "_", focal_level, "_", focal_reporter, "R.csv"), na = "")
   
   if(return_full_data == TRUE & return_only_collated == FALSE) {
     return(list("CITES_MASTER" = CITES_MASTER, 
@@ -619,7 +619,8 @@ if(Class_for_traits == "Aves"){
     Check_13 = (Adult_survival_Perc <= .25) + 
     (Age_at_first_breeding_Perc >= .75) +
     (GenLength_Perc >= .75) +
-    (Max_longevity_Perc >= .75))
+    (Max_longevity_Perc >= .75)) %>%
+    mutate(Check_13 = ifelse(Class == "Reptilia", NA, Check_13))
 }
   return(data2)
 }
