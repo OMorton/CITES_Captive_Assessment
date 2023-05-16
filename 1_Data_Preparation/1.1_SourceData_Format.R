@@ -339,7 +339,9 @@ df_new <- left_join(backbone, Historic_IUCN_up) %>%
   fill(Taxon, .direction = "up") %>% 
   filter(Year %in% c(2000:2020)) %>% ungroup() %>%
   select(Year, Taxon, IUCN_code, IUCNName, Taxon) %>% 
-  mutate(IUCN_code = replace_na(IUCN_code, "Not assessed")) %>% distinct() %>%
+  mutate(IUCN_code = replace_na(IUCN_code, "Not assessed"),
+         IUCN_code = ifelse(IUCN_code == "DD", "Not assessed", IUCN_code)) %>% 
+  distinct() %>%
   ## deal with EX species
   mutate(IUCN_code = ifelse(Taxon == "Anas oustaleti", "EX", IUCN_code))
 
@@ -456,8 +458,8 @@ Sp_series <- expand.grid(Taxon = unique(sp_done_A$Taxon), Year = 1975:2020) %>%
   arrange(Taxon, Year) %>% group_by(Taxon) %>% 
   fill(Change, .direction = "down") %>%
   fill(Appendix, .direction = "down") %>%
-  filter(!is.na(Appendix)) %>%
-  mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix))
+  mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix),
+         Appendix = ifelse(is.na(Appendix), "Not listed", Appendix))
   
 check <- Sp_series %>% group_by(Taxon) %>% filter(n_distinct(Appendix) > 1)
 n_distinct(Sp_series$Taxon) ## 538
@@ -483,9 +485,9 @@ GEN_series <- expand.grid(Taxon = unique(GEN_done_A$Taxon), Year = 1975:2020) %>
                             TRUE ~ ADD)) %>%
   arrange(Taxon, Year) %>% group_by(Taxon) %>% 
   fill(Change, .direction = "down") %>%
-  fill(Appendix, .direction = "down") %>%
-  filter(!is.na(Appendix)) %>%
-  mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix))
+  fill(Appendix, .direction = "down")  %>%
+  mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix),
+         Appendix = ifelse(is.na(Appendix), "Not listed", Appendix))
 
 n_distinct(GEN_series$Taxon) ## 376
 
@@ -514,8 +516,8 @@ FAM_series <- expand.grid(Taxon = unique(FAM_done_A$Taxon), Year = 1975:2020) %>
   arrange(Taxon, Year) %>% group_by(Taxon) %>% 
   fill(Change, .direction = "down") %>%
   fill(Appendix, .direction = "down") %>%
-  filter(!is.na(Appendix)) %>%
-  mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix))
+  mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix),
+         Appendix = ifelse(is.na(Appendix), "Not listed", Appendix))
 
 n_distinct(FAM_series$Taxon) ## 357
 
@@ -543,8 +545,8 @@ ORD_series <- expand.grid(Taxon = unique(ORD_done_A$Taxon), Year = 1975:2020) %>
   arrange(Taxon, Year) %>% group_by(Taxon) %>% 
   fill(Change, .direction = "down") %>%
   fill(Appendix, .direction = "down") %>%
-  filter(!is.na(Appendix)) %>%
-  mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix))
+  mutate(Appendix = ifelse(Change == "DEL", "Not listed", Appendix),
+         Appendix = ifelse(is.na(Appendix), "Not listed", Appendix))
 
 n_distinct(ORD_series$Taxon) ## 59
 
