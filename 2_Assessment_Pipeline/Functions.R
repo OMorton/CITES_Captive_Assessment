@@ -105,7 +105,9 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
            Appendix != "N") %>%
     ## Summarise to grouped vol
     group_by_at(App_group) %>% 
-    reframe(Vol = sum(Quantity)) %>%
+    reframe(Vol = sum(Quantity), 
+            Source_traded = paste(unique(Source), collapse = " "), 
+            Purpose_traded = paste(unique(Purpose), collapse = " ")) %>%
     filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon))
   
   ## Check all 28 species that appear in multiple appendices in a single year (check that none are truly split listed.)
@@ -115,10 +117,19 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
   cat(paste0("Warning: There were ", n_distinct(Check), " species that appeared in multiple Appendices from 1 Exporter. See Check.\n" ))
   
   ## Output main data of summed term/woe records to check
-  CITES_Focal_Capt <- CITES_Focal_Capt %>%
+  CITES_Focal_Capt <- CITES_TRUE %>% 
+    filter(Class %in% focal_class, Year %in% 2000:2020,
+           ## R added to align with UNEP
+           Source %in% c("C", "D", "F", "R"), 
+           ## Focus on ER trade in number of individuals
+           Reporter.type == focal_reporter, 
+           Appendix != "N") %>%
     ## Summarise to grouped vol
     group_by_at(Sum_group) %>% 
-    reframe(Vol = sum(Vol)) %>%
+    reframe(Vol = sum(Quantity), 
+            Source_traded = paste(unique(Source), collapse = " "), 
+            Purpose_traded = paste(unique(Purpose), collapse = " ")) %>%
+    filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon)) %>%
     ungroup() %>%
     ## add unique id
     mutate(ROW_ID = row_number())
@@ -300,7 +311,7 @@ CITES_Comm_Contrast <- CITES_TRUE %>%
     left_join(Historic_live_imports, by = c("Taxon", "Exporter" = "Importer")) %>%
     ## Add historic records of F1 trade
     left_join(Historic_source, by = c("Taxon", "Exporter")) %>%
-    mutate(Year_F1 = if_else(is.na(Year_F1), "No record", Year_F1)) %>%
+    mutate(Year_F1 = if_else(is.na(Year_F1), "9999", Year_F1)) %>%
     ## Add other reporting source captive trade
     left_join(CITES_Capt_Contrast, by = Sum_group) %>%
     mutate(Capt_Vol_IR = if_else(is.na(Capt_Vol_IR), 0, Capt_Vol_IR)) %>%
@@ -596,7 +607,10 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
                                              Year_2_vol_Wild,
                                              Year_1_vol_Wild)))) ~ TRUE,
       .default =  FALSE),
-    
+    ## Check 6 has a species traded as C ever been traded as F
+    Check_6 = ifelse(
+      str_detect(Source_traded, "C") & all(as.numeric(unlist(
+        str_split(Year_F1, pattern = ", "))) >= Year), TRUE, FALSE) %>%
     ## For subsequent use check are total ER and IR reported volumes roughly
     ## equivalent (plus/minus 25%)
     Check_6_7_equivalent_reporting =
