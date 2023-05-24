@@ -98,8 +98,8 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
   ## 30,868 records
   CITES_Focal_Capt <- CITES_TRUE %>% 
     filter(Class %in% focal_class, Year %in% 2000:2020,
-           ## R could also be added to align with UNEP
-           Source %in% c("C", "D", "F"), 
+           ## R added to align with UNEP
+           Source %in% c("C", "D", "F", "R"), 
            ## Focus on ER trade in number of individuals
            Reporter.type == focal_reporter, 
            Appendix != "N") %>%
