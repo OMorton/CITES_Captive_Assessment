@@ -123,6 +123,29 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
     ## add unique id
     mutate(ROW_ID = row_number())
   
+#### Purpose volumes #### 
+Focal_Comm_vol <- CITES_TRUE %>% 
+    filter(Class %in% focal_class, Year %in% 2000:2020,
+           ## R added to align with UNEP
+           Source %in% c("C", "D", "F", "R"), 
+           ## Focus on ER trade in number of individuals
+           Reporter.type == focal_reporter, 
+           Appendix != "N", !grepl("spp", Taxon), !grepl("hybrid", Taxon),
+           Purpose == "T") %>%
+    group_by_at(Sum_group) %>%
+    summarise(Comm_vol = sum(Quantity))
+  
+  Focal_NonComm_vol <- CITES_TRUE %>% 
+    filter(Class %in% focal_class, Year %in% 2000:2020,
+           ## R added to align with UNEP
+           Source %in% c("C", "D", "F", "R"), 
+           ## Focus on ER trade in number of individuals
+           Reporter.type == focal_reporter, 
+           Appendix != "N", !grepl("spp", Taxon), !grepl("hybrid", Taxon),
+           Purpose != "T") %>%
+    group_by_at(Sum_group) %>%
+    summarise(NonComm_vol = sum(Quantity))
+    
   #### Historic imports ####
   
   cat("Compiling historic live imports to exporting country\n")
@@ -146,7 +169,7 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
     group_by(Taxon, Exporter) %>% 
     summarise(Year_F1 = paste(Year, collapse=', '))
   
-  #### Contrast reporter records ####
+  #### Contrast reporter Sources ####
   
   cat(paste0("Compiling contrasting ", contrast_reporter, " reported trade records\n" ))
   
@@ -180,6 +203,29 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
   ## Ranch
   CITES_Ranch_Contrast <- reporter_contrast_sum(data = CITES_TRUE,  codes = c("R"))
   
+  #### Contrasting reporter purposes ####
+ 
+CITES_Comm_Contrast <- CITES_TRUE %>% 
+    filter(Class %in% focal_class, Year %in% 2000:2020,
+           Source %in% codes, 
+           Reporter.type == contrast_reporter, Unit == "Number of specimens" | is.na(Unit), 
+           Appendix != "N",
+           !grepl("spp", Taxon), !grepl("hybrid", Taxon), 
+           Purpose == "T") %>%
+    group_by_at(Sum_group) %>% 
+    summarise(!!paste0("Comm_Vol_", contrast_reporter, "R") := sum(Quantity)) %>%
+    ungroup()
+  
+  CITES_NonComm_Contrast <- CITES_TRUE %>% 
+    filter(Class %in% focal_class, Year %in% 2000:2020,
+           Source %in% codes, 
+           Reporter.type == contrast_reporter, Unit == "Number of specimens" | is.na(Unit), 
+           Appendix != "N",
+           !grepl("spp", Taxon), !grepl("hybrid", Taxon), 
+           Purpose != "T") %>%
+    group_by_at(Sum_group) %>% 
+    summarise(!!paste0("NonComm_Vol_", contrast_reporter, "R") := sum(Quantity)) %>%
+    ungroup()
   
   #### Historic source records ####
   
@@ -252,6 +298,18 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
     ## Add other reporting source ranch trade
     left_join(CITES_Ranch_Contrast, by = Sum_group) %>%
     mutate(Ranch_Vol_IR = if_else(is.na(Ranch_Vol_IR), 0, Ranch_Vol_IR)) %>%
+    ## add other reporter Comm trade
+    left_join(CITES_Comm_Contrast, by = Sum_group) %>%
+    mutate(Comm_Vol_IR = if_else(is.na(Comm_Vol_IR), 0, Comm_Vol_IR)) %>%
+    ## add other reporter NonComm trade
+    left_join(CITES_NonComm_Contrast, by = Sum_group) %>%
+    mutate(NonComm_Vol_IR = if_else(is.na(NonComm_Vol_IR), 0, NonComm_Vol_IR)) %>%
+    ## add the comm vol
+    left_join(Focal_Comm_vol, by = Sum_group) %>%
+    mutate(Comm_vol = if_else(is.na(Comm_vol), 0, Comm_vol)) %>%
+    ## add the non comm vol
+    left_join(Focal_NonComm_vol, by = Sum_group) %>%
+    mutate(NonComm_vol = if_else(is.na(NonComm_vol), 0, NonComm_vol)) %>%
     ## Add historic capt trade
     left_join(CITES_focal_hist_capt, by = "ROW_ID") %>%
     ## Add historic wild trade
