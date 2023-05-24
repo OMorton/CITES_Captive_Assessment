@@ -192,7 +192,7 @@ Focal_Comm_vol <- CITES_TRUE %>%
     if(all(codes %in% c("R"))) {
       lab = "Ranch"
     }
-    if(all(codes %in% c("W", "U", "X"))) {
+    if(all(codes %in% c("W", "U", "X", NA))) {
       lab = "Wild"
     }
     
@@ -210,7 +210,7 @@ Focal_Comm_vol <- CITES_TRUE %>%
   ## Capt
   CITES_Capt_Contrast <- reporter_contrast_sum(data = CITES_TRUE,  codes = c("C", "D", "F"))
   ## Wild
-  CITES_Wild_Contrast <- reporter_contrast_sum(data = CITES_TRUE,  codes = c("W", "X", "U"))
+  CITES_Wild_Contrast <- reporter_contrast_sum(data = CITES_TRUE,  codes = c("W", "X", "U", NA))
   ## Ranch
   CITES_Ranch_Contrast <- reporter_contrast_sum(data = CITES_TRUE,  codes = c("R"))
   
@@ -250,7 +250,7 @@ CITES_Comm_Contrast <- CITES_TRUE %>%
           if(all(codes %in% c("R"))) {
             lab = "Ranch"
           }
-          if(all(codes %in% c("W", "U", "X"))) {
+          if(all(codes %in% c("W", "U", "X", NA))) {
             lab = "Wild"
           }
           CITES_Taxa_Hist <- CITES_TRUE %>% 
@@ -287,7 +287,7 @@ CITES_Comm_Contrast <- CITES_TRUE %>%
   ## Hist Capt
   CITES_focal_hist_capt <- focal_history(data = CITES_TRUE, codes = c("C", "D", "F"))
   ## Hist wild
-  CITES_focal_hist_wild <- focal_history(data = CITES_TRUE, codes = c("W", "U", "X"))
+  CITES_focal_hist_wild <- focal_history(data = CITES_TRUE, codes = c("W", "U", "X", NA))
   ## Hist ranch
   CITES_focal_hist_ranch <- focal_history(data = CITES_TRUE, codes = c("R"))
   
@@ -413,7 +413,16 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
         "Registered_breeders", "Distribution", "Exporter", "Bordering", 
         "Years_imported", "ROW_ID") %in% colnames(data))){
     stop("Columns not named in the format supplied by data_prep()")
-    
+  }
+  
+  ## Error catch if purpose codes split doesn't add to focal amount
+  if(any(data$Comm_vol + data$NonComm_vol + data$NA_vol == data$Vol) %in% FALSE){
+    stop("Commerical, Non-Commercial and NA purposes subtotals do not sum to the correct total")
+  }
+  
+  ## Error catch if source codes split doesn't add to focal amount
+  if(any(data$Year_0_vol_Capt + data$Year_0_vol_Ranch == data$Vol) %in% FALSE){
+    stop("Captive and ranch subtotals do not sum to the correct total")
   }
   
   ## Rather than use paste/!=/!! inside dplyr verbs rename the IR/ER 
