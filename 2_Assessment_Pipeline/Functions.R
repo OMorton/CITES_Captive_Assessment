@@ -135,6 +135,16 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
     filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon)) %>% 
     group_by(Taxon, Importer) %>%
     summarise(Years_imported = paste(Year, collapse=', '))
+
+  #### Historic sources ####  
+  
+  cat("Compiling historic records of F1 exports\n")
+  
+  ## Get the years the species was exported as F
+  Historic_source <- CITES_TRUE %>% 
+    filter(Class %in% focal_class, Source == "F")%>%
+    group_by(Taxon, Exporter) %>% 
+    summarise(Year_F1 = paste(Year, collapse=', '))
   
   #### Contrast reporter records ####
   
@@ -230,6 +240,9 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
   Full_data_to_check <- CITES_Focal_Capt %>%
     ## Add historic live import records to the exporting country
     left_join(Historic_live_imports, by = c("Taxon", "Exporter" = "Importer")) %>%
+    ## Add historic records of F1 trade
+    left_join(Historic_source, by = c("Taxon", "Exporter")) %>%
+    mutate(Year_F1 = if_else(is.na(Year_F1), 9999, Year_F1)) %>%
     ## Add other reporting source captive trade
     left_join(CITES_Capt_Contrast, by = Sum_group) %>%
     mutate(Capt_Vol_IR = if_else(is.na(Capt_Vol_IR), 0, Capt_Vol_IR)) %>%
