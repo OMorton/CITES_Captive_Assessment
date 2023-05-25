@@ -459,7 +459,9 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
         "Year_1_vol_Wild",  "Year_0_vol_Wild",
         "Wild_Vol_Contrast", "Ranch_Vol_Contrast","Capt_Vol_Contrast", 
         "Registered_breeders", "Distribution", "Exporter", "Bordering", 
-        "Years_imported", "ROW_ID") %in% colnames(data))){
+        "Years_imported", "ROW_ID",
+        "Comm_vol", "NonComm_vol", "NA_vol",
+        "Comm_Vol_Contrast", "NonComm_Vol_Contrast", "NA_Vol_Contrast") %in% colnames(data))){
     stop("Columns not named in the format supplied by data_prep()")
   }
   
@@ -762,7 +764,8 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     ## No registered breeder?
     Check_13 = case_when(Code_D_vol > 0 & str_detect(Registered_breeders, Exporter) ~ FALSE,
                          Code_D_vol > 0 & !str_detect(Registered_breeders, Exporter) ~ TRUE,
-                         Code_D_vol > 0 & is.na(Registered_breeders) ~ TRUE),
+                         Code_D_vol > 0 & is.na(Registered_breeders) ~ TRUE,
+                         .default = FALSE),
     Check_13_prop = ifelse(Check_13 == TRUE, Code_D_vol/Vol, 0),
     
     ## Check that the exporter country is still recognized
@@ -831,6 +834,7 @@ checks_summary <- function(data, groups, App1_only = FALSE, format = "long") {
                 Check_10_count = sum(Check_10), Check_10_vol =  sum(Vol[Check_10 == TRUE]),
                 Check_11_count = sum(Check_11), Check_11_vol =  sum(Vol[Check_11 == TRUE]),
                 Check_12_count = sum(Check_12), Check_12_vol =  sum(Vol[Check_12 == TRUE]),
+                Check_13_count = sum(Check_13), Check_13_vol =  sum(Vol[Check_13 == TRUE]),
                 Total_count = n(), Total_vol = sum(Vol),
                 Check_1_count_prop = Check_1_count/Total_count, Check_1_vol_prop = Check_1_vol/Total_vol,
                 Check_2_count_prop = Check_2_count/Total_count, Check_2_vol_prop = Check_2_vol/Total_vol,
@@ -843,7 +847,8 @@ checks_summary <- function(data, groups, App1_only = FALSE, format = "long") {
                 Check_9_count_prop = Check_9_count/Total_count, Check_9_vol_prop = Check_9_vol/Total_vol,
                 Check_10_count_prop = Check_10_count/Total_count, Check_10_vol_prop = Check_10_vol/Total_vol,
                 Check_11_count_prop = Check_11_count/Total_count, Check_11_vol_prop = Check_11_vol/Total_vol,
-                Check_12_count_prop = Check_12_count/Total_count, Check_12_vol_prop = Check_12_vol/Total_vol)
+                Check_12_count_prop = Check_12_count/Total_count, Check_12_vol_prop = Check_12_vol/Total_vol,
+                Check_13_count_prop = Check_13_count/Total_count, Check_13_vol_prop = Check_13_vol/Total_vol)
   } else {
    sum <-  data %>% group_by(!!!syms(groups)) %>% 
       summarise(Check_1_count = sum(Check_1), Check_1_vol =  sum(Vol[Check_1 == TRUE]),
@@ -851,18 +856,20 @@ checks_summary <- function(data, groups, App1_only = FALSE, format = "long") {
                 Check_3_count = sum(Check_3), Check_3_vol =  sum(Vol[Check_3 == TRUE]),
                 Check_4_count = sum(Check_4), Check_4_vol =  sum(Vol[Check_4 == TRUE]),
                 Check_5_count = sum(Check_5), Check_5_vol =  sum(Vol[Check_5 == TRUE]),
-                Check_10_count = sum(Check_10), Check_10_vol =  sum(Vol[Check_10 == TRUE]),
-                Check_11_count = sum(Check_11), Check_11_vol =  sum(Vol[Check_11 == TRUE]),
-                Check_12_count = sum(Check_12), Check_12_vol =  sum(Vol[Check_12 == TRUE]),
+                Check_6_count = sum(Check_6), Check_6_vol =  sum(Vol[Check_6 == TRUE]),
+                Check_7_count = sum(Check_7), Check_7_vol =  sum(Vol[Check_7 == TRUE]),
+                Check_8_count = sum(Check_8), Check_8_vol =  sum(Vol[Check_8 == TRUE]),
+                Check_9_count = sum(Check_9), Check_9_vol =  sum(Vol[Check_9 == TRUE]),
                 Total_count = n(), Total_vol = sum(Vol),
                 Check_1_count_prop = Check_1_count/Total_count, Check_1_vol_prop = Check_1_vol/Total_vol,
                 Check_2_count_prop = Check_2_count/Total_count, Check_2_vol_prop = Check_2_vol/Total_vol,
                 Check_3_count_prop = Check_3_count/Total_count, Check_3_vol_prop = Check_3_vol/Total_vol,
                 Check_4_count_prop = Check_4_count/Total_count, Check_4_vol_prop = Check_4_vol/Total_vol,
                 Check_5_count_prop = Check_5_count/Total_count, Check_5_vol_prop = Check_5_vol/Total_vol,
-                Check_10_count_prop = Check_10_count/Total_count, Check_10_vol_prop = Check_10_vol/Total_vol,
-                Check_11_count_prop = Check_11_count/Total_count, Check_11_vol_prop = Check_11_vol/Total_vol,
-                Check_12_count_prop = Check_12_count/Total_count, Check_12_vol_prop = Check_12_vol/Total_vol)
+                Check_6_count_prop = Check_6_count/Total_count, Check_6_vol_prop = Check_6_vol/Total_vol,
+                Check_7_count_prop = Check_7_count/Total_count, Check_7_vol_prop = Check_7_vol/Total_vol,
+                Check_8_count_prop = Check_8_count/Total_count, Check_8_vol_prop = Check_8_vol/Total_vol,
+                Check_9_count_prop = Check_9_count/Total_count, Check_9_vol_prop = Check_9_vol/Total_vol)
   }
   if(format == "long"){
   sum <- sum %>%
@@ -871,17 +878,15 @@ checks_summary <- function(data, groups, App1_only = FALSE, format = "long") {
                  names_pattern = c("(\\w+\\d+)_(\\w+)")) %>%
     select(!!!syms(groups), Check, count, vol, Total_count, Total_vol, count_prop, vol_prop) %>%
     mutate(Focus = case_when(
-      Check %in% c("Check_1", "Check_2", 
-                   "Check_3", "Check_4", "Check_5") ~ "Trade trends",
-      Check %in% c("Check_6", "Check_7", 
-                   "Check_8", "Check_9") ~ "Reporting inconsistencies",
-      Check %in% c("Check_10", "Check_11",
-                   "Check_12") ~ "Legal acquisition",
-      Check %in% c("Check_13") ~ "Species biology"),
+      Check %in% c("Check_1", "Check_2", "Check_3") ~ "Trade trends",
+      Check %in% c("Check_4", "Check_5", "Check_6") ~ "Code switching",
+      Check %in% c("Check_7", "Check_8", "Check_9") ~ "Legal acquisition",
+      Check %in% c("Check_10", "Check_11", "Check_12", "Check_13") ~ "Reporting inconsistencies"),
+      
       Check = factor(Check, levels = c("Check_1", "Check_2","Check_3", "Check_4",
                                        "Check_5", "Check_6", "Check_7", "Check_8", 
                                        "Check_9", "Check_10", "Check_11",
-                                       "Check_12")))
+                                       "Check_12", "Check_13")))
   }
   
   return(sum)
