@@ -239,7 +239,7 @@ CITES_Comm_Contrast <- CITES_TRUE %>%
     reframe(!!paste0("Comm_Vol_", contrast_reporter, "R") := sum(Quantity)) %>%
     ungroup()
   
-  CITES_NonComm_Contrast <- CITES_TRUE %>% 
+CITES_NonComm_Contrast <- CITES_TRUE %>% 
     filter(Class %in% focal_class, Year %in% 2000:2020,
            Source %in% c("C", "D", "F", "R"), 
            Reporter.type == contrast_reporter, Unit == "Number of specimens" | is.na(Unit), 
@@ -249,6 +249,17 @@ CITES_Comm_Contrast <- CITES_TRUE %>%
     group_by_at(Sum_group) %>% 
     reframe(!!paste0("NonComm_Vol_", contrast_reporter, "R") := sum(Quantity)) %>%
     ungroup()
+
+CITES_NApurp_Contrast <- CITES_TRUE %>% 
+  filter(Class %in% focal_class, Year %in% 2000:2020,
+         Source %in% c("C", "D", "F", "R"), 
+         Reporter.type == contrast_reporter, Unit == "Number of specimens" | is.na(Unit), 
+         Appendix != "N",
+         !grepl("spp", Taxon), !grepl("hybrid", Taxon), 
+         is.na(Purpose)) %>%
+  group_by_at(Sum_group) %>% 
+  reframe(!!paste0("NA_Vol_", contrast_reporter, "R") := sum(Quantity)) %>%
+  ungroup()
   
 #### Historic source records ####
   
@@ -327,6 +338,9 @@ CITES_Comm_Contrast <- CITES_TRUE %>%
     ## add other reporter NonComm trade
     left_join(CITES_NonComm_Contrast, by = Sum_group) %>%
     mutate(NonComm_Vol_IR = if_else(is.na(NonComm_Vol_IR), 0, NonComm_Vol_IR)) %>%
+    ## add other reporter NA trade
+    left_join(CITES_NApurp_Contrast, by = Sum_group) %>%
+    mutate(NA_Vol_IR = if_else(is.na(NA_Vol_IR), 0, NA_Vol_IR)) %>%
     ## add the comm vol
     left_join(Focal_Comm_vol, by = Sum_group) %>%
     mutate(Comm_vol = if_else(is.na(Comm_vol), 0, Comm_vol)) %>%
@@ -607,26 +621,43 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
                                              Year_2_vol_Wild,
                                              Year_1_vol_Wild)))) ~ TRUE,
       .default =  FALSE),
-    ## Check 6 has a species traded as C ever been traded as F
+    ## 6 - has a species traded as C ever been traded as F
     Check_6 = ifelse(
       str_detect(Source_traded, "C") & all(as.numeric(unlist(
-        str_split(Year_F1, pattern = ", "))) >= Year), TRUE, FALSE) %>%
+        str_split(Year_F1, pattern = ", "))) >= Year), TRUE, FALSE),
+      ## 7 - Aligns with AC31 Doc 19.1 Criterion vi) Legal acquisition
+      ## Is the species exported from a non range state?
+    Check_7 = ifelse(str_detect(Distribution, Exporter), 
+                        FALSE, TRUE),
+    
+    ## 8 - Aligns with AC31 Doc 19.1 Criterion vi) Legal acquisition
+    ## The Exporter doesn't neighbor a range state?
+    Check_8 = ifelse(grepl(pattern = paste(
+      unlist(str_split(Bordering, pattern = ", ")), collapse = "|"), Distribution),
+      FALSE, TRUE),
+    
+    ## 9 - Aligns with AC31 Doc 19.1 Criterion vi) Legal acquisition
+    ## The species has never been imported live in previous years
+    Check_9 = all(as.numeric(unlist(
+      str_split(Years_imported, pattern = ", "))) >= Year),
+      
+      
     ## For subsequent use check are total ER and IR reported volumes roughly
     ## equivalent (plus/minus 25%)
-    Check_6_7_equivalent_reporting =
+    Check_10_11_12_equivalent_reporting =
       ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast) <= 
                (Vol + Year_0_vol_Wild + Year_0_vol_Ranch)*1.25 &
                (Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast) >= 
                (Vol + Year_0_vol_Wild + Year_0_vol_Ranch)*0.75,
              TRUE, FALSE),
     
-    ## 6 - Aligns with AC31 Doc 19.1 Criteria iv) Reporting inconsistencies
+    ## 10 - Aligns with AC31 Doc 19.1 Criteria iv) Reporting inconsistencies
     ## Assesses captive to wild source switching in ER and IR trade.
     ## Is there evidence that reporters source codes switch/diagree?
-    Check_6 = ifelse(
+    Check_10 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
-      Check_6_7_equivalent_reporting == TRUE &
+      Check_10_11_12_equivalent_reporting == TRUE &
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
                        (abs(Vol/(Vol + Year_0_vol_Wild) -
@@ -645,69 +676,55 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
                               Capt_Vol_Contrast/(Capt_Vol_Contrast + Wild_Vol_Contrast)),
                      TRUE, FALSE),
     
-    ## 7 - Aligns with AC31 Doc 19.1 Criteria iv) Reporting inconsistencies
+    ## 11 - Aligns with AC31 Doc 19.1 Criteria iv) Reporting inconsistencies
     ## Assesses captive to ranch source switching in ER and IR trade.
     ## Is there evidence that reporters source codes switch/diagree?    
-    Check_7 = ifelse(
+    Check_11 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
-      Check_6_7_equivalent_reporting == TRUE &
+      Check_10_11_12_equivalent_reporting == TRUE &
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
-                       (abs(Vol/(Vol + Year_0_vol_Ranch) -
+                       (abs(Year_0_vol_Capt/(Vol) -
                           Capt_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
         ## Check there is a corresponding difference in ER and IR reported
         ## ranched trade.
         ## This is important to confirm there is a compensatory change in both
         ## sources
-                       (abs(Year_0_vol_Ranch/(Vol + Year_0_vol_Ranch) -
+                       (abs(Year_0_vol_Ranch/(Vol) -
                           Ranch_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
         ## Final step is just to confirm that one change is an increase (+) 
         ## and the other is a decrease (-).
-                       sign(Year_0_vol_Ranch/(Vol + Year_0_vol_Ranch) -
-                              Ranch_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) != 
-                       sign(Vol/(Vol + Year_0_vol_Ranch) -
-                              Capt_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)),
+                       sign(Year_0_vol_Capt/(Vol) -
+                              Capt_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) != 
+                       sign(Year_0_vol_Ranch/(Vol) -
+                              Ranch_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)),
                      TRUE, FALSE),
     
-    ## 8 - IR are not within 25% of ER
-    ## Not sure whether this check will be kept
-    Check_8 = if_else(Capt_Vol_Contrast >= Vol*1.25 |
-                        Capt_Vol_Contrast <= Vol*0.75,
-                      TRUE, FALSE),
-    
-    ## 9 - Aligns with AC31 Doc 19.1 Criterion v) Incorrect application of 
+    ## 12 - Commercial to non commercial ration differed by >10%.
+    Check_12 = ifelse(
+      ## Checks that total volumes are largely equivalent and therefore 
+      ## the proportions can be compared
+      Check_10_11_12_equivalent_reporting == TRUE &),
+      
+    ## 13 - Aligns with AC31 Doc 19.1 Criterion v) Incorrect application of 
     ## source codes
     ## No registered breeder?
-    Check_9 = is.na(Registered_breeders),
+    Check_13 = is.na(Registered_breeders),
     
     ## Check that the exporter country is still recognized
-    Check_10_11_12_INVALID = ifelse(Exporter %in% c("YU", "CS"), 
+    Check_7_8_9_INVALID = ifelse(Exporter %in% c("YU", "CS"), 
                                     "INVALID", "VALID"),
     
-    ## 10 - Aligns with AC31 Doc 19.1 Criterion vi) Legal acquisition
-    ## Is the species exported from a non range state?
-    Check_10 = ifelse(str_detect(Distribution, Exporter), 
-                      FALSE, TRUE),
     
-    ## 11 - Aligns with AC31 Doc 19.1 Criterion vi) Legal acquisition
-    ## The Exporter doesn't neighbor a range state?
-    Check_11 = ifelse(grepl(pattern = paste(
-      unlist(str_split(Bordering, pattern = ", ")), collapse = "|"), Distribution),
-      FALSE, TRUE),
-    
-    ## 12 - Aligns with AC31 Doc 19.1 Criterion vi) Legal acquisition
-    ## The species has never been imported live in previous years
-    Check_12 = all(as.numeric(unlist(
-      str_split(Years_imported, pattern = ", "))) >= Year)
   ) %>%
     ungroup() %>%
     ## Catch for species that were never imported 
-    mutate(Check_12 = ifelse(is.na(Check_12), TRUE, Check_12)) %>%
-    ## If the exporter is a range state (Check 10), Check 11 and 12 automatically
+    mutate(Check_9 = ifelse(is.na(Check_9), TRUE, Check_9)) %>%
+    ## If the exporter is a range state (Check 7), Check 8 and 9 automatically
     ## pass.
-    mutate(Check_11 = ifelse(Check_10 == FALSE, FALSE, Check_11),
-           Check_12 = ifelse(Check_10 == FALSE, FALSE, Check_12),
+    mutate(Check_8 = ifelse(Check_7 == FALSE, FALSE, Check_8),
+           Check_9 = ifelse(Check_7 == FALSE, FALSE, Check_9),
            ## If the total contrast source trade was zero it generates instances
            ## of 0 / 0 in checks 7 and 8, this is a catch all for those instances
            ## records automatically pass as if there is no reported trade there 
