@@ -168,6 +168,15 @@ Focal_Comm_vol <- CITES_TRUE %>%
     group_by_at(Sum_group) %>%
     reframe(NA_vol = sum(Quantity))
     
+#### App I D code ####
+  Code_D_vol <- CITES_TRUE %>% 
+    filter(Class %in% focal_class, Year %in% 2000:2020,
+           Source %in% c("D"), 
+           ## Focus on ER trade in number of individuals
+           Reporter.type == focal_reporter, 
+           Appendix != "N", !grepl("spp", Taxon), !grepl("hybrid", Taxon)) %>%
+    group_by_at(Sum_group) %>%
+    reframe(Code_D_vol = sum(Quantity))
 #### Historic imports ####
   
   cat("Compiling historic live imports to exporting country\n")
@@ -323,6 +332,9 @@ CITES_NApurp_Contrast <- CITES_TRUE %>%
     ## Add historic records of F1 trade
     left_join(Historic_source, by = c("Taxon", "Exporter")) %>%
     mutate(Year_F1 = if_else(is.na(Year_F1), "9999", Year_F1)) %>%
+    ## Add D volume
+    left_join(Code_D_vol, by = Sum_group) %>%
+    mutate(Code_D_vol = if_else(is.na(Code_D_vol), 0, Code_D_vol)) %>%
     ## Add other reporting source captive trade
     left_join(CITES_Capt_Contrast, by = Sum_group) %>%
     mutate(Capt_Vol_IR = if_else(is.na(Capt_Vol_IR), 0, Capt_Vol_IR)) %>%
@@ -418,12 +430,21 @@ CITES_NApurp_Contrast <- CITES_TRUE %>%
 captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits = "Aves") 
   {
   
+  ####################################
+  #### NAMING CONTRAST CONVENTION ####
+  ####################################
+  
   ## Set up the contrast reporter source
   contrast_reporter = "I"
   
   if(focal_reporter == "I") {
     contrast_reporter = "E"
   }
+  
+  ## Rather than use paste/!=/!! inside dplyr verbs rename the IR/ER 
+  ## ending variables to end in _Contrast
+  colnames(data) <- gsub(x = colnames(data), pattern = paste0(contrast_reporter, "R"), 
+                         replacement = "Contrast") 
   
   #####################
   #### ERROR BLOCK ####
@@ -436,9 +457,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
         "Year_2_vol_Ranch", "Year_1_vol_Ranch", "Year_0_vol_Ranch",
         "Year_5_vol_Wild", "Year_4_vol_Wild", "Year_3_vol_Wild", "Year_2_vol_Wild", 
         "Year_1_vol_Wild",  "Year_0_vol_Wild",
-        paste0("Wild_Vol_", contrast_reporter, "R"), 
-        paste0("Ranch_Vol_", contrast_reporter, "R"),
-        paste0("Capt_Vol_", contrast_reporter, "R"), 
+        "Wild_Vol_Contrast", "Ranch_Vol_Contrast","Capt_Vol_Contrast", 
         "Registered_breeders", "Distribution", "Exporter", "Bordering", 
         "Years_imported", "ROW_ID") %in% colnames(data))){
     stop("Columns not named in the format supplied by data_prep()")
@@ -450,9 +469,9 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
   }
   
   ## Error catch if contrast reporter purpose codes split doesn't add to focal amount
-  if(any(data$Comm_Vol_IR + data$NonComm_Vol_IR + data$NA_Vol_IR == 
+  if(any(data$Comm_Vol_Contrast + data$NonComm_Vol_Contrast + data$NA_Vol_Contrast == 
          data$Capt_Vol_Contrast + data$Ranch_Vol_Contrast) %in% FALSE){
-    stop("Commerical, Non-Commercial and NA purposes subtotals do not sum to the correct total")
+    stop("Commerical, Non-Commercial and NA purposes contrast reporter subtotals do not sum to the correct total")
   }
   
   ## Error catch if source codes split doesn't add to focal amount
@@ -460,14 +479,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     stop("Captive and ranch subtotals do not sum to the correct total")
   }
   
-  ####################################
-  #### NAMING CONTRAST CONVENTION ####
-  ####################################
-  
-  ## Rather than use paste/!=/!! inside dplyr verbs rename the IR/ER 
-  ## ending variables to end in _Contrast
-  colnames(data) <- gsub(x = colnames(data), pattern = paste0(contrast_reporter, "R"), 
-                         replacement = "Contrast")  
+ 
   
   #########################
   #### ASSESSMENT CODE ####
@@ -661,6 +673,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     Check_9 = all(as.numeric(unlist(
       str_split(Years_imported, pattern = ", "))) >= Year),
       
+    #### APPENDIX I ONLY CHECKS ####
       
     ## For subsequent use check are total ER and IR reported volumes roughly
     ## equivalent (plus/minus 25%)
@@ -729,25 +742,28 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
         ## Check that the difference in proportion between ER and IR reported 
         ## commerical trade is >10%
         (abs(Comm_vol/(Vol) -
-                  Comm_vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
+                  Comm_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
         ## Check there is a corresponding difference in ER and IR reported
         ## ranched trade.
         ## This is important to confirm there is a compensatory change in both
         ## sources
         (abs(NonComm_vol + NA_vol/(Vol) -
-               NonComm_Vol_Contrast + NA_vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
+               NonComm_Vol_Contrast + NA_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
         ## Final step is just to confirm that one change is an increase (+) 
         ## and the other is a decrease (-).
         sign(Comm_vol/(Vol) -
-               Comm_vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) != 
+               Comm_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) != 
         sign(NonComm_vol + NA_vol/(Vol) -
-               NonComm_Vol_Contrast + NA_vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)),
+               NonComm_Vol_Contrast + NA_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)),
       TRUE, FALSE),
       
     ## 13 - Aligns with AC31 Doc 19.1 Criterion v) Incorrect application of 
     ## source codes
     ## No registered breeder?
-    Check_13 = is.na(Registered_breeders),
+    Check_13 = case_when(Code_D_vol > 0 & str_detect(Registered_breeders, Exporter) ~ FALSE,
+                         Code_D_vol > 0 & !str_detect(Registered_breeders, Exporter) ~ TRUE,
+                         Code_D_vol > 0 & is.na(Registered_breeders) ~ TRUE),
+    Check_13_prop = ifelse(Check_13 == TRUE, Code_D_vol/Vol, 0),
     
     ## Check that the exporter country is still recognized
     Check_7_8_9_INVALID = ifelse(Exporter %in% c("YU", "CS"), 
@@ -785,7 +801,7 @@ if(Class_for_traits == "Aves"){
     (Age_at_first_breeding_Perc >= .75) +
     (GenLength_Perc >= .75) +
     (Max_longevity_Perc >= .75)) %>%
-    mutate(Check_13 = ifelse(Class == "Reptilia", NA, Check_13))
+    mutate(Check_14 = ifelse(Class == "Reptilia", NA, Check_13))
 }
   return(data2)
 }
