@@ -425,6 +425,10 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     contrast_reporter = "E"
   }
   
+  #####################
+  #### ERROR BLOCK ####
+  #####################
+  
   ## Error catch for if data_prep() column format supplied
   if(any(!c("Year_5_vol_Capt", "Year_4_vol_Capt", "Year_3_vol_Capt", "Year_2_vol_Capt", 
         "Year_1_vol_Capt", "Year_0_vol_Capt",
@@ -445,36 +449,49 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     stop("Commerical, Non-Commercial and NA purposes subtotals do not sum to the correct total")
   }
   
+  ## Error catch if contrast reporter purpose codes split doesn't add to focal amount
+  if(any(data$Comm_Vol_IR + data$NonComm_Vol_IR + data$NA_Vol_IR == 
+         data$Capt_Vol_Contrast + data$Ranch_Vol_Contrast) %in% FALSE){
+    stop("Commerical, Non-Commercial and NA purposes subtotals do not sum to the correct total")
+  }
+  
   ## Error catch if source codes split doesn't add to focal amount
   if(any(data$Year_0_vol_Capt + data$Year_0_vol_Ranch == data$Vol) %in% FALSE){
     stop("Captive and ranch subtotals do not sum to the correct total")
   }
+  
+  ####################################
+  #### NAMING CONTRAST CONVENTION ####
+  ####################################
   
   ## Rather than use paste/!=/!! inside dplyr verbs rename the IR/ER 
   ## ending variables to end in _Contrast
   colnames(data) <- gsub(x = colnames(data), pattern = paste0(contrast_reporter, "R"), 
                          replacement = "Contrast")  
   
+  #########################
+  #### ASSESSMENT CODE ####
+  #########################
   data2 <- data %>% group_by(ROW_ID) %>% mutate(
     ## 1 - Aligns with AC31 Doc 19.1 Criteria i) Sig Increase
     ## Is the current records volumes more than double the 
     ## mean of the last 5 years trade?
     Check_1 = 
-      Vol > 2*mean(c(Year_5_vol_Capt, 
-                   Year_4_vol_Capt,
-                   Year_3_vol_Capt,
-                   Year_2_vol_Capt,
-                   Year_1_vol_Capt)),
+      Vol > 2*mean(c(Year_5_vol_Capt + Year_5_vol_Ranch, 
+                     Year_4_vol_Capt + Year_4_vol_Ranch,
+                     Year_3_vol_Capt + Year_3_vol_Ranch,
+                     Year_2_vol_Capt + Year_2_vol_Ranch,
+                     Year_1_vol_Capt + Year_1_vol_Ranch)),
     
     ## 2 - Aligns with AC31 Doc 19.1 Criteria i) Significant increase
     ## Is the current records volumes more than quadruple the 
     ## mean of the last 5 years trade?
     Check_2 = 
-      Vol > 4*mean(c(Year_5_vol_Capt, 
-                   Year_4_vol_Capt,
-                   Year_3_vol_Capt,
-                   Year_2_vol_Capt,
-                   Year_1_vol_Capt)),
+      Vol > 4*mean(c(Year_5_vol_Capt + Year_5_vol_Ranch, 
+                     Year_4_vol_Capt + Year_4_vol_Ranch,
+                     Year_3_vol_Capt + Year_3_vol_Ranch,
+                     Year_2_vol_Capt + Year_2_vol_Ranch,
+                     Year_1_vol_Capt + Year_1_vol_Ranch)),
     
     ## 3 - Aligns with AC31 Doc 19.1 Criteria ii) Significant numbers
     ## The criteria applied uses multipliers - justification unclear.
@@ -489,12 +506,79 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     ## Phrasing in the doc uses unclear language (doubling) that appears to not
     ## account for differing scales.
     ## Is there evidence of shifts in source codes?
-    ## Ranched Version
+    ## Wild Version
     Check_4 = case_when(
+      Check_1 == TRUE & 
+        ## check captive trend is increasing 
+        abs((Vol - mean(c(Year_5_vol_Capt + Year_5_vol_Ranch, 
+                          Year_4_vol_Capt + Year_4_vol_Ranch,
+                          Year_3_vol_Capt + Year_3_vol_Ranch,
+                          Year_2_vol_Capt + Year_2_vol_Ranch,
+                          Year_1_vol_Capt + Year_1_vol_Ranch))) +
+              ## Get the wild change relative to 5-year ranch mean
+              (Year_0_vol_Wild - mean(c(Year_5_vol_Wild,
+                                        Year_4_vol_Wild,
+                                        Year_3_vol_Wild,
+                                        Year_2_vol_Wild,
+                                        Year_1_vol_Wild)))) <=
+        ## Get the absolute difference between the sources e.g. would be 
+        ## zero if the increase in captive trade was fully matched by a
+        ## decrease in ranched trade.
+        
+        ## Check the absolute difference is at least 50% of the largest shift.
+        ## This ensure that the differences are the majority absorbed by the other
+        ## source and prevents instances like where captive trade doubles from 
+        ## 1000 to 2000 and ranched trade halves from 20 to 10. One doubles and
+        ## the other halves but the relative scales are so disparate to be off no
+        ## plausible association.
+        0.5*max(abs((Vol - mean(c(Year_5_vol_Capt + Year_5_vol_Ranch, 
+                                  Year_4_vol_Capt + Year_4_vol_Ranch,
+                                  Year_3_vol_Capt + Year_3_vol_Ranch,
+                                  Year_2_vol_Capt + Year_2_vol_Ranch,
+                                  Year_1_vol_Capt + Year_1_vol_Ranch)))),
+                abs(Year_0_vol_Wild - mean(c(Year_5_vol_Wild,
+                                             Year_4_vol_Wild,
+                                             Year_3_vol_Wild,
+                                             Year_2_vol_Wild,
+                                             Year_1_vol_Wild)))) ~ TRUE, 
+      Vol < 0.5*mean(c(Year_5_vol_Capt + Year_5_vol_Ranch, 
+                       Year_4_vol_Capt + Year_4_vol_Ranch,
+                       Year_3_vol_Capt + Year_3_vol_Ranch,
+                       Year_2_vol_Capt + Year_2_vol_Ranch,
+                       Year_1_vol_Capt + Year_1_vol_Ranch)) &
+        abs((Vol - mean(c(Year_5_vol_Capt, 
+                          Year_4_vol_Capt,
+                          Year_3_vol_Capt,
+                          Year_2_vol_Capt,
+                          Year_1_vol_Capt))) +
+              ## Get the wild change relative to 5-year ranch mean
+              (Year_0_vol_Wild - mean(c(Year_5_vol_Wild,
+                                        Year_4_vol_Wild,
+                                        Year_3_vol_Wild,
+                                        Year_2_vol_Wild,
+                                        Year_1_vol_Wild)))) <=
+        0.5*max(abs((Vol - mean(c(Year_5_vol_Capt + Year_5_vol_Ranch, 
+                                  Year_4_vol_Capt + Year_4_vol_Ranch,
+                                  Year_3_vol_Capt + Year_3_vol_Ranch,
+                                  Year_2_vol_Capt + Year_2_vol_Ranch,
+                                  Year_1_vol_Capt + Year_1_vol_Ranch)))),
+                abs(Year_0_vol_Wild - mean(c(Year_5_vol_Wild,
+                                             Year_4_vol_Wild,
+                                             Year_3_vol_Wild,
+                                             Year_2_vol_Wild,
+                                             Year_1_vol_Wild)))) ~ TRUE,
+      .default =  FALSE),
+    
+    ## 5 - Aligns with AC31 Doc 19.1 Criteria iii) Shifts in source codes
+    ## Phrasing in the doc uses unclear language (doubling) that appears to not
+    ## account for differing scales.
+    ## Is there evidence of shifts in source codes?
+    ## Ranched Version
+    Check_5 = case_when(
       ## check captive trend is increasing 
       Check_1 == TRUE & 
         ## Get the captive increase relative to 5-year captive mean
-        abs((Vol - mean(c(Year_5_vol_Capt, 
+        abs((Year_0_vol_Capt - mean(c(Year_5_vol_Capt, 
                         Year_4_vol_Capt,
                         Year_3_vol_Capt,
                         Year_2_vol_Capt,
@@ -515,7 +599,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
       ## 1000 to 2000 and ranched trade halves from 20 to 10. One doubles and
       ## the other halves but the relative scales are so disparate to be off no
       ## plausible association.
-        0.5*max(abs((Vol - mean(c(Year_5_vol_Capt, 
+        0.5*max(abs((Year_0_vol_Capt - mean(c(Year_5_vol_Capt, 
                                 Year_4_vol_Capt,
                                 Year_3_vol_Capt,
                                 Year_2_vol_Capt,
@@ -526,13 +610,13 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
                                             Year_2_vol_Ranch,
                                             Year_1_vol_Ranch)))) ~ TRUE,
       ## Now the decrease
-      Vol < 0.5*mean(c(Year_5_vol_Capt, 
+      Year_0_vol_Capt < 0.5*mean(c(Year_5_vol_Capt, 
                      Year_4_vol_Capt,
                      Year_3_vol_Capt,
                      Year_2_vol_Capt,
                      Year_1_vol_Capt)) &
         ## Get the captive increase relative to 5-year captive mean
-        abs((Vol - mean(c(Year_5_vol_Capt, 
+        abs((Year_0_vol_Capt - mean(c(Year_5_vol_Capt, 
                           Year_4_vol_Capt,
                           Year_3_vol_Capt,
                           Year_2_vol_Capt,
@@ -543,7 +627,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
                                          Year_3_vol_Ranch,
                                          Year_2_vol_Ranch,
                                          Year_1_vol_Ranch))))  <=
-        0.5*max(abs((Vol - mean(c(Year_5_vol_Capt, 
+        0.5*max(abs((Year_0_vol_Capt - mean(c(Year_5_vol_Capt, 
                                   Year_4_vol_Capt,
                                   Year_3_vol_Capt,
                                   Year_2_vol_Capt,
@@ -555,76 +639,12 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
                                               Year_1_vol_Ranch)))) ~ TRUE,
                      .default = FALSE),
     
-    ## 5 - Aligns with AC31 Doc 19.1 Criteria iii) Shifts in source codes
-    ## Phrasing in the doc uses unclear language (doubling) that appears to not
-    ## account for differing scales.
-    ## Is there evidence of shifts in source codes?
-    ## Wild Version
-    Check_5 = case_when(
-      Check_1 == TRUE & 
-        ## check captive trend is increasing 
-        abs((Vol - mean(c(Year_5_vol_Capt, 
-                        Year_4_vol_Capt,
-                        Year_3_vol_Capt,
-                        Year_2_vol_Capt,
-                        Year_1_vol_Capt))) +
-              ## Get the wild change relative to 5-year ranch mean
-              (Year_0_vol_Wild - mean(c(Year_5_vol_Wild,
-                                      Year_4_vol_Wild,
-                                      Year_3_vol_Wild,
-                                      Year_2_vol_Wild,
-                                      Year_1_vol_Wild)))) <=
-        ## Get the absolute difference between the sources e.g. would be 
-        ## zero if the increase in captive trade was fully matched by a
-        ## decrease in ranched trade.
-        
-        ## Check the absolute difference is at least 50% of the largest shift.
-        ## This ensure that the differences are the majority absorbed by the other
-        ## source and prevents instances like where captive trade doubles from 
-        ## 1000 to 2000 and ranched trade halves from 20 to 10. One doubles and
-        ## the other halves but the relative scales are so disparate to be off no
-        ## plausible association.
-        0.5*max(abs((Vol - mean(c(Year_5_vol_Capt, 
-                                 Year_4_vol_Capt,
-                                 Year_3_vol_Capt,
-                                 Year_2_vol_Capt,
-                                 Year_1_vol_Capt)))),
-                 abs(Year_0_vol_Wild - mean(c(Year_5_vol_Wild,
-                                            Year_4_vol_Wild,
-                                            Year_3_vol_Wild,
-                                            Year_2_vol_Wild,
-                                            Year_1_vol_Wild)))) ~ TRUE, 
-      Vol < 0.5*mean(c(Year_5_vol_Capt, 
-                       Year_4_vol_Capt,
-                       Year_3_vol_Capt,
-                       Year_2_vol_Capt,
-                       Year_1_vol_Capt)) &
-        abs((Vol - mean(c(Year_5_vol_Capt, 
-                          Year_4_vol_Capt,
-                          Year_3_vol_Capt,
-                          Year_2_vol_Capt,
-                          Year_1_vol_Capt))) +
-              ## Get the wild change relative to 5-year ranch mean
-              (Year_0_vol_Wild - mean(c(Year_5_vol_Wild,
-                                        Year_4_vol_Wild,
-                                        Year_3_vol_Wild,
-                                        Year_2_vol_Wild,
-                                        Year_1_vol_Wild)))) <=
-        0.5*max(abs((Vol - mean(c(Year_5_vol_Capt, 
-                                  Year_4_vol_Capt,
-                                  Year_3_vol_Capt,
-                                  Year_2_vol_Capt,
-                                  Year_1_vol_Capt)))),
-                abs(Year_0_vol_Wild - mean(c(Year_5_vol_Wild,
-                                             Year_4_vol_Wild,
-                                             Year_3_vol_Wild,
-                                             Year_2_vol_Wild,
-                                             Year_1_vol_Wild)))) ~ TRUE,
-      .default =  FALSE),
+    
     ## 6 - has a species traded as C ever been traded as F
     Check_6 = ifelse(
       str_detect(Source_traded, "C") & all(as.numeric(unlist(
         str_split(Year_F1, pattern = ", "))) >= Year), TRUE, FALSE),
+    
       ## 7 - Aligns with AC31 Doc 19.1 Criterion vi) Legal acquisition
       ## Is the species exported from a non range state?
     Check_7 = ifelse(str_detect(Distribution, Exporter), 
@@ -661,19 +681,19 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
                        (abs(Vol/(Vol + Year_0_vol_Wild) -
-                          Capt_Vol_Contrast/(Capt_Vol_Contrast + Wild_Vol_Contrast)) >= 0.1) &
+                          Capt_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast)) >= 0.1) &
         ## Check there is a corresponding difference in ER and IR reported
         ## wild trade.
         ## This is important to confirm there is a compensatory change in both
         ## sources
                        (abs(Year_0_vol_Wild/(Vol + Year_0_vol_Wild) -
-                          Wild_Vol_Contrast/(Capt_Vol_Contrast + Wild_Vol_Contrast)) >= 0.1) &
+                          Wild_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast)) >= 0.1) &
         ## Final step is just to confirm that one change is an increase (+) 
         ## and the other is a decrease (-).
                        sign(Year_0_vol_Wild/(Vol + Year_0_vol_Wild) -
-                              Wild_Vol_Contrast/(Capt_Vol_Contrast + Wild_Vol_Contrast)) != 
+                              Wild_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast)) != 
                        sign(Vol/(Vol + Year_0_vol_Wild) -
-                              Capt_Vol_Contrast/(Capt_Vol_Contrast + Wild_Vol_Contrast)),
+                              Capt_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast)),
                      TRUE, FALSE),
     
     ## 11 - Aligns with AC31 Doc 19.1 Criteria iv) Reporting inconsistencies
@@ -705,7 +725,24 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     Check_12 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
-      Check_10_11_12_equivalent_reporting == TRUE &),
+      Check_10_11_12_equivalent_reporting == TRUE & 
+        ## Check that the difference in proportion between ER and IR reported 
+        ## commerical trade is >10%
+        (abs(Comm_vol/(Vol) -
+                  Comm_vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
+        ## Check there is a corresponding difference in ER and IR reported
+        ## ranched trade.
+        ## This is important to confirm there is a compensatory change in both
+        ## sources
+        (abs(NonComm_vol + NA_vol/(Vol) -
+               NonComm_Vol_Contrast + NA_vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
+        ## Final step is just to confirm that one change is an increase (+) 
+        ## and the other is a decrease (-).
+        sign(Comm_vol/(Vol) -
+               Comm_vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) != 
+        sign(NonComm_vol + NA_vol/(Vol) -
+               NonComm_Vol_Contrast + NA_vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)),
+      TRUE, FALSE),
       
     ## 13 - Aligns with AC31 Doc 19.1 Criterion v) Incorrect application of 
     ## source codes
@@ -726,13 +763,15 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     mutate(Check_8 = ifelse(Check_7 == FALSE, FALSE, Check_8),
            Check_9 = ifelse(Check_7 == FALSE, FALSE, Check_9),
            ## If the total contrast source trade was zero it generates instances
-           ## of 0 / 0 in checks 7 and 8, this is a catch all for those instances
+           ## of 0 / 0 in checks 10, 11 and 12, this is a catch all for those instances
            ## records automatically pass as if there is no reported trade there 
            ## cannot be source switching.
-           Check_6 = ifelse((Capt_Vol_Contrast + Wild_Vol_Contrast) == 0,
-                            FALSE, Check_6),
-           Check_7 = ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast) == 0,
-                            FALSE, Check_7))
+           Check_10 = ifelse((Capt_Vol_Contrast + Wild_Vol_Contrast) == 0,
+                            FALSE, Check_10),
+           Check_11 = ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast) == 0,
+                            FALSE, Check_11),
+           Check_12 = ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast) == 0,
+                             FALSE, Check_12))
   
 if(Class_for_traits == "Aves"){
   
@@ -740,9 +779,9 @@ if(Class_for_traits == "Aves"){
             "Max_longevity_Perc") %in% colnames(data))){
     stop("Bird percentile trait data not supplied")}
   
-  ## 13 - Score out of 4 for how "slow" life history traits are
+  ## 14 - Score out of 4 for how "slow" life history traits are
   data2 <- data2 %>% group_by(ROW_ID) %>% mutate(
-    Check_13 = (Adult_survival_Perc <= .25) + 
+    Check_14 = (Adult_survival_Perc <= .25) + 
     (Age_at_first_breeding_Perc >= .75) +
     (GenLength_Perc >= .75) +
     (Max_longevity_Perc >= .75)) %>%
