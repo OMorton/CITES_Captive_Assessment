@@ -172,7 +172,7 @@ check_tally_plotII <- ggplot(Sum_totalsII, aes(Check, n)) +
                               "Check_9" = "9", "Check_10" = "10", "Check_11" = "11", "Check_12" = "12",
                               "Check_13" = "13")) +
   annotate("text", label = "Volume trends", x = 2, y = 40000, fontface = "bold", drop = FALSE, size = 3) +
-  annotate("text", label = "Source\n switching", x = 5, y = 40000, fontface = "bold", size = 3) +
+  annotate("text", label = "Code\n switching", x = 5, y = 40000, fontface = "bold", size = 3) +
   annotate("text", label = "Legal acquisition", x = 8, y = 40000, fontface = "bold", size = 3) +
   annotate("text", label = "Reporting inconsistencies", x = 11.5, y = 40000, fontface = "bold", size = 3) +
   ylab("Tally of fails") +
@@ -203,7 +203,7 @@ ggsave("Summaries/Figures/Checkcount_plt.png", check_tally_plot, device = "png",
 #### species prioritisation - Aves ####
 sp10_rankings <- AvesRept_checked_WOE %>% 
   ## remove the extinct sp
-  filter(Taxon != "Rhodonessa caryophyllacea") %>%
+  #filter(Taxon != "Rhodonessa caryophyllacea") %>%
   select(Year, Taxon, Class, Order, Exporter, Vol, IUCN_code, ROW_ID, Appendix, 69:111) %>%
   unite("ID", c(Year, Taxon, Exporter), remove = FALSE) %>% group_by(Class) %>%
   slice_max(Ovr_score, n = 10) %>%
@@ -211,7 +211,7 @@ sp10_rankings <- AvesRept_checked_WOE %>%
 
 sp10_checks <- AvesRept_checked_WOE %>%
   ## remove the extinct sp
-  filter(Taxon != "Rhodonessa caryophyllacea") %>%
+  #filter(Taxon != "Rhodonessa caryophyllacea") %>%
   group_by(Class) %>%
   slice_max(Ovr_score, n = 10) %>%
   select(Year, Taxon, Exporter, Check_1, Check_2, Check_3, Check_4, 
@@ -256,11 +256,11 @@ sp10_plt_aves <- ggplot(filter(sp10_checks, Class == "Aves"), aes(Check, reorder
   geom_text(data = filter(sp10_rankings, Class == "Aves"), aes("Vol", ID, label = round(Vol, 2))) +
   geom_label(data = filter(sp10_rankings, Class == "Aves"), aes("IUCN", ID, label = IUCN_code, fill = IUCN_code)) +
   geom_text(data = filter(sp10_rankings, Class == "Aves"), aes("App", ID, label = Appendix)) +
- # scale_fill_manual(values = c("red", "darkorange", "grey70")) +
+  scale_fill_manual(values = c("red", "darkorange", "dodgerblue", "skyblue", "goldenrod1")) +
   annotate("text", label = "Volume trends", x = 7, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Code\n switching", x = 9.5, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Legal acquisition", x = 12.5, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Reporting\n inconsistencies", x = 16, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Code\n switching", x = 10, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Legal acquisition", x = 13, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Reporting\n inconsistencies", x = 16.5, y = 11, fontface = "bold", size = 3.5) +
   coord_cartesian(ylim = c(0.5, 11.5), expand = FALSE, xlim = c(0.5, 19.5)) +
   xlab("") + ylab("") +
   theme_minimal(base_size = 10) +
@@ -292,60 +292,63 @@ sp10_checks_2020 <- AvesRept_checked_WOE  %>% filter(Year == 2020) %>% group_by(
                                           "Check_11", "Check_12", "Check_13"))) %>%
   left_join(select(sp10_rankings_2020, ID, Ovr_score))
 
+Aves_plt_order_2020 <- sp10_rankings_2020 %>% filter(Class == "Aves") %>% arrange(Ovr_score)
+
+
 sp10_plt_2020_aves <- ggplot(filter(sp10_checks_2020, Class == "Aves"), aes(Check, reorder(ID, Ovr_score))) + 
   geom_point(colour = NA) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Psittacus erithacus_ZA", Ovr_score = 1), xmin = 5.5, xmax = 8.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Lonchura oryzivora_CU", Ovr_score = 1), xmin = 5.5, xmax = 8.5, 
             ymin = -Inf, ymax = 10.5, fill = "lightskyblue1", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Psittacus erithacus_ZA", Ovr_score = 1),xmin = 8.5, xmax = 10.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Lonchura oryzivora_CU", Ovr_score = 1),xmin = 8.5, xmax = 11.5, 
             ymin = -Inf, ymax = 10.5, fill = "darkseagreen2", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Psittacus erithacus_ZA", Ovr_score = 1),xmin = 10.5, xmax = 14.5, 
-            ymin = -Inf, ymax = 10.5, fill = "lightgoldenrod", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Psittacus erithacus_ZA", Ovr_score = 1),xmin = 14.5, xmax = 17.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Lonchura oryzivora_CU", Ovr_score = 1),xmin = 11.5, xmax = 14.5, 
             ymin = -Inf, ymax = 10.5, fill = "rosybrown1", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Psittacus erithacus_ZA", Ovr_score = 1),xmin = 17.5, xmax = 18.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Lonchura oryzivora_CU", Ovr_score = 1),xmin = 14.5, xmax = 18.5, 
+            ymin = -Inf, ymax = 10.5, fill = "lightgoldenrod", alpha = .4) +
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Lonchura oryzivora_CU", Ovr_score = 1),xmin = 18.5, xmax = 19.5, 
             ymin = -Inf, ymax = 10.5, fill = "grey85", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Psittacus erithacus_ZA", Ovr_score = 1), xmin = -Inf, xmax = Inf, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Lonchura oryzivora_CU", Ovr_score = 1), xmin = -Inf, xmax = Inf, 
             ymin = 10.5, ymax = 13, fill = "white") +
   geom_point(shape = 4, colour = "darkred", size = 4) +
   scale_x_discrete(drop=FALSE, limits = c("Vol", "Exporter","Year",  "IUCN", "App", "Check_1", "Check_2", "Check_3", "Check_4", "Check_5",
                                           "Check_6", "Check_7", "Check_8", "Check_9", "Check_10",
-                                          "Check_11", "Check_12", "Score"),
+                                          "Check_11", "Check_12", "Check_13", "Score"),
                    labels = c("Vol",  "Exporter", "Year","IUCN", "App", "1", "2", "3", "4", "5",
-                              "6", "7", "8", "9", "10", "11", "12", "Score")) +
-  scale_y_discrete(labels = c("Amazona oratrix", "Lonchura oryzivora", 
-                              "Pyrrhura molinae", "Aratinga solstitialis", 
-                              "Amazona oratrix", "Cyanopsitta spixii", 
-                              "Cyanoramphus novaezelandiae", "Ara glaucogularis",
-                              "Amazona auropalliata", "Psittacus erithacus")) + 
+                              "6", "7", "8", "9", "10", "11", "12", "13", "Score")) +
+  scale_y_discrete(labels = Aves_plt_order_2020$Taxon) + 
   geom_text(data = filter(sp10_rankings_2020, Class == "Aves"), aes("Score", ID, label = round(Ovr_score, 2)), fontface = "bold") +
   geom_text(data = filter(sp10_rankings_2020, Class == "Aves"), aes("Year", ID, label = round(Year, 2))) +
   geom_text(data = filter(sp10_rankings_2020, Class == "Aves"), aes("Exporter", ID, label = Exporter)) +
   geom_text(data = filter(sp10_rankings_2020, Class == "Aves"), aes("Vol", ID, label = round(Vol, 2))) +
   geom_label(data = filter(sp10_rankings_2020, Class == "Aves"), aes("IUCN", ID, label = IUCN_code, fill = IUCN_code)) +
   geom_text(data = filter(sp10_rankings_2020, Class == "Aves"), aes("App", ID, label = Appendix)) +
-  scale_fill_manual(values = c("red", "darkorange", "white", "grey70")) +
+  scale_fill_manual(values = c("red", "darkorange", "dodgerblue", "skyblue")) +
   annotate("text", label = "Volume trends", x = 7, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Source\n switching", x = 9.5, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Reporting\n inconsistencies", x = 12.5, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Legal acquisition", x = 16, y = 11, fontface = "bold", size = 3.5) +
-  coord_cartesian(ylim = c(0.5, 11.5), expand = FALSE, xlim = c(0.5, 18.5)) +
+  annotate("text", label = "Code\n switching", x = 10, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Legal acquisition", x = 13, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Reporting\n inconsistencies", x = 16.5, y = 11, fontface = "bold", size = 3.5) +
+  coord_cartesian(ylim = c(0.5, 11.5), expand = FALSE, xlim = c(0.5, 19.5)) +
   xlab("") + ylab("") +
   theme_minimal(base_size = 10) +
   theme(legend.position = "none",
         axis.text.x = element_text(face=c("bold","bold","bold", "bold","bold", "plain",
                                           "plain", "plain", "plain", "plain", "plain",
                                           "plain", "plain", "plain", "plain", "plain",
-                                          "plain", "bold"), colour = "black"),
+                                          "plain", "plain", "bold"), colour = "black"),
         axis.text.y = element_text(face = "bold.italic", colour = "black", size = 12))
 
 top10_plt <- ggarrange(sp10_plt_aves, sp10_plt_2020_aves, nrow = 2, labels = c("A. 2000 - 2020", "B. 2020     "))
 
-A_ora <- grid::rasterGrob(jpeg::readJPEG("Data/Images/A_Oratrix.jpg"), interpolate = TRUE)
-C_nov <- grid::rasterGrob(jpeg::readJPEG("Data/Images/C_novaezelandiae.jpg"), interpolate = TRUE)
-P_eri <- grid::rasterGrob(jpeg::readJPEG("Data/Images/P_erithacus.jpg"), interpolate = TRUE)
-A_sol <- grid::rasterGrob(jpeg::readJPEG("Data/Images/A_solstatis.jpg"), interpolate = TRUE)
+#A_ora <- grid::rasterGrob(jpeg::readJPEG("Data/Images/A_Oratrix.jpg"), interpolate = TRUE)
+#C_nov <- grid::rasterGrob(jpeg::readJPEG("Data/Images/C_novaezelandiae.jpg"), interpolate = TRUE)
+#P_eri <- grid::rasterGrob(jpeg::readJPEG("Data/Images/P_erithacus.jpg"), interpolate = TRUE)
+#A_sol <- grid::rasterGrob(jpeg::readJPEG("Data/Images/A_solstatis.jpg"), interpolate = TRUE)
+C_malh <- grid::rasterGrob(jpeg::readJPEG("Data/Images/C_malh2.jpg"), interpolate = TRUE)
+A_fisc <- grid::rasterGrob(jpeg::readJPEG("Data/Images/A_fisc2.jpg"), interpolate = TRUE)
+L_oryz <- grid::rasterGrob(jpeg::readJPEG("Data/Images/L_oryz2.jpg"), interpolate = TRUE)
+A_glau <- grid::rasterGrob(jpeg::readJPEG("Data/Images/A_glau2.jpg"), interpolate = TRUE)
 
-images <- ggarrange(P_eri, C_nov, A_sol, A_ora, nrow = 1, labels = c("C.", "D.", "E.", "F."))
+images <- ggarrange(C_malh, A_fisc, L_oryz, A_glau, nrow = 1, labels = c("C.", "D.", "E.", "F."))
 
 top10_plt_final <- ggarrange(top10_plt, images, nrow = 2, heights = c(1, .3))
 
@@ -355,106 +358,103 @@ ggsave("Summaries/Figures/top10_plt_aves.png", top10_plt_final, device = "png",
 
 #### species prioritisation - Reptiles ####
 
+Rept_plt_order <- sp10_rankings %>% filter(Class == "Reptilia") %>% arrange(Ovr_score)
+
 sp10_plt_rept <- ggplot(filter(sp10_checks, Class == "Reptilia"), aes(Check, reorder(ID, Ovr_score))) +
   geom_point(colour = NA) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2019_Malacochersus tornieri_SI", Ovr_score = 1), xmin = 5.5, xmax = 8.5, 
-            ymin = -Inf, ymax = Inf, fill = "lightskyblue1", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2019_Malacochersus tornieri_SI", Ovr_score = 1),xmin = 8.5, xmax = 10.5, 
-            ymin = -Inf, ymax = Inf, fill = "darkseagreen2", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2019_Malacochersus tornieri_SI", Ovr_score = 1),xmin = 10.5, xmax = 14.5, 
-            ymin = -Inf, ymax = Inf, fill = "lightgoldenrod", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2019_Malacochersus tornieri_SI", Ovr_score = 1),xmin = 14.5, xmax = 17.5, 
-            ymin = -Inf, ymax = Inf, fill = "rosybrown1", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2019_Malacochersus tornieri_SI", Ovr_score = 1),xmin = 17.5, xmax = 18.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2014_Chelonoidis carbonarius_SV", Ovr_score = 1), xmin = 5.5, xmax = 8.5, 
+            ymin = -Inf, ymax = 10.5, fill = "lightskyblue1", alpha = .4) +
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2014_Chelonoidis carbonarius_SV", Ovr_score = 1),xmin = 8.5, xmax = 11.5, 
+            ymin = -Inf, ymax = 10.5, fill = "darkseagreen2", alpha = .4) +
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2014_Chelonoidis carbonarius_SV", Ovr_score = 1),xmin = 11.5, xmax = 14.5, 
+            ymin = -Inf, ymax = 10.5, fill = "rosybrown1", alpha = .4) +
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2014_Chelonoidis carbonarius_SV", Ovr_score = 1),xmin = 14.5, xmax = 18.5, 
+            ymin = -Inf, ymax = 10.5, fill = "lightgoldenrod", alpha = .4) +
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2014_Chelonoidis carbonarius_SV", Ovr_score = 1),xmin = 18.5, xmax = 19.5, 
             ymin = -Inf, ymax = 10.5, fill = "grey85", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2019_Malacochersus tornieri_SI", Ovr_score = 1), xmin = -Inf, xmax = Inf, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2014_Chelonoidis carbonarius_SV", Ovr_score = 1), xmin = -Inf, xmax = Inf, 
             ymin = 10.5, ymax = 13, fill = "white") +
   geom_point(shape = 4, colour = "darkred", size = 4) +
   scale_x_discrete(drop=FALSE, limits = c("Vol", "Exporter","Year",  "IUCN", "App", "Check_1", "Check_2", "Check_3", "Check_4", "Check_5",
                                           "Check_6", "Check_7", "Check_8", "Check_9", "Check_10",
-                                          "Check_11", "Check_12", "Score"),
+                                          "Check_11", "Check_12", "Check_13", "Score"),
                    labels = c("Vol", "Exporter", "Year",  "IUCN", "App", "1", "2", "3", "4", "5",
-                              "6", "7", "8", "9", "10", "11", "12", "Score")) +
-  scale_y_discrete(labels = c("Malacochersus tornieri", "Crocodylus siamensis",
-                              "Crocodylus siamensis", "Crocodylus siamensis",
-                              "Crocodylus siamensis", "Crocodylus siamensis", 
-                              "Crocodylus siamensis", "Crocodylus siamensis",
-                              "Testudo kleinmanni", "Crocodylus siamensis")) + 
+                              "6", "7", "8", "9", "10", "11", "12", "13", "Score")) +
+  scale_y_discrete(labels = Rept_plt_order$Taxon) + 
   geom_text(data = filter(sp10_rankings, Class == "Reptilia"), aes("Score", ID, label = round(Ovr_score, 2)), fontface = "bold") +
   geom_text(data = filter(sp10_rankings, Class == "Reptilia"), aes("Year", ID, label = round(Year, 2))) +
   geom_text(data = filter(sp10_rankings, Class == "Reptilia"), aes("Exporter", ID, label = Exporter)) +
   geom_text(data = filter(sp10_rankings, Class == "Reptilia"), aes("Vol", ID, label = round(Vol, 2))) +
   geom_label(data = filter(sp10_rankings, Class == "Reptilia"), aes("IUCN", ID, label = IUCN_code, fill = IUCN_code)) +
   geom_text(data = filter(sp10_rankings, Class == "Reptilia"), aes("App", ID, label = Appendix)) +
-  scale_fill_manual(values = c("red", "darkorange", "grey70")) +
+  scale_fill_manual(values = c("red", "dodgerblue", "grey70", "goldenrod1")) +
   annotate("text", label = "Volume trends", x = 7, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Source\n switching", x = 9.5, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Reporting\n inconsistencies", x = 12.5, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Legal acquisition", x = 16, y = 11, fontface = "bold", size = 3.5) +
-  coord_cartesian(ylim = c(0.5, 11.5), expand = FALSE, xlim = c(0.5, 18.5)) +
+  annotate("text", label = "Code\n switching", x = 10, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Legal acquisition", x = 13, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Reporting\n inconsistencies", x = 16.5, y = 11, fontface = "bold", size = 3.5) +
+  coord_cartesian(ylim = c(0.5, 11.5), expand = FALSE, xlim = c(0.5, 19.5)) +
   xlab("") + ylab("") +
   theme_minimal(base_size = 10) +
   theme(legend.position = "none",
         axis.text.x = element_text(face=c("bold","bold","bold", "bold","bold", "plain",
                                           "plain", "plain", "plain", "plain", "plain",
                                           "plain", "plain", "plain", "plain", "plain",
-                                          "plain", "bold"), colour = "black"),
+                                          "plain", "plain", "bold"), colour = "black"),
         axis.text.y = element_text(face = "bold.italic", colour = "black", size = 12))
 
 
+Rept_plt_order_2020 <- sp10_rankings_2020 %>% filter(Class == "Reptilia") %>% arrange(Ovr_score)
+
 sp10_plt_2020_rept <- ggplot(filter(sp10_checks_2020, Class == "Reptilia"), aes(Check, reorder(ID, Ovr_score))) + 
   geom_point(colour = NA) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Astrochelys radiata_SI", Ovr_score = 1), xmin = 5.5, xmax = 8.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Chelonoidis carbonarius_SV", Ovr_score = 1), xmin = 5.5, xmax = 8.5, 
             ymin = -Inf, ymax = 10.5, fill = "lightskyblue1", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Astrochelys radiata_SI", Ovr_score = 1),xmin = 8.5, xmax = 10.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Chelonoidis carbonarius_SV", Ovr_score = 1),xmin = 8.5, xmax = 11.5, 
             ymin = -Inf, ymax = 10.5, fill = "darkseagreen2", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Astrochelys radiata_SI", Ovr_score = 1),xmin = 10.5, xmax = 14.5, 
-            ymin = -Inf, ymax = 10.5, fill = "lightgoldenrod", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Astrochelys radiata_SI", Ovr_score = 1),xmin = 14.5, xmax = 17.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Chelonoidis carbonarius_SV", Ovr_score = 1),xmin = 11.5, xmax = 14.5, 
             ymin = -Inf, ymax = 10.5, fill = "rosybrown1", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Astrochelys radiata_SI", Ovr_score = 1),xmin = 17.5, xmax = 18.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Chelonoidis carbonarius_SV", Ovr_score = 1),xmin = 14.5, xmax = 18.5, 
+            ymin = -Inf, ymax = 10.5, fill = "lightgoldenrod", alpha = .4) +
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Chelonoidis carbonarius_SV", Ovr_score = 1),xmin = 18.5, xmax = 19.5, 
             ymin = -Inf, ymax = 10.5, fill = "grey85", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Astrochelys radiata_SI", Ovr_score = 1), xmin = -Inf, xmax = Inf, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2020_Chelonoidis carbonarius_SV", Ovr_score = 1), xmin = -Inf, xmax = Inf, 
             ymin = 10.5, ymax = 13, fill = "white") +
   geom_point(shape = 4, colour = "darkred", size = 4) +
   scale_x_discrete(drop=FALSE, limits = c("Vol", "Exporter","Year",  "IUCN", "App", "Check_1", "Check_2", "Check_3", "Check_4", "Check_5",
                                           "Check_6", "Check_7", "Check_8", "Check_9", "Check_10",
-                                          "Check_11", "Check_12", "Score"),
+                                          "Check_11", "Check_12", "Check_13", "Score"),
                    labels = c("Vol",  "Exporter", "Year","IUCN", "App", "1", "2", "3", "4", "5",
-                              "6", "7", "8", "9", "10", "11", "12", "Score")) +
-  scale_y_discrete(labels = c("Cuora picturata", "Pyxis arachnoides", 
-                              "Malacochersus tornieri", "Crocodylus rhombifer", 
-                              "Crocodylus siamensis", "Lygodactylus williamsi", 
-                              "Brachylophus vitiensis", "Astrochelys radiata",
-                              "Astrochelys radiata", "Astrochelys radiata")) + 
+                              "6", "7", "8", "9", "10", "11", "12", "13", "Score")) +
+  scale_y_discrete(labels = Rept_plt_order_2020$Taxon) + 
   geom_text(data = filter(sp10_rankings_2020, Class == "Reptilia"), aes("Score", ID, label = round(Ovr_score, 2)), fontface = "bold") +
   geom_text(data = filter(sp10_rankings_2020, Class == "Reptilia"), aes("Year", ID, label = round(Year, 2))) +
   geom_text(data = filter(sp10_rankings_2020, Class == "Reptilia"), aes("Exporter", ID, label = Exporter)) +
   geom_text(data = filter(sp10_rankings_2020, Class == "Reptilia"), aes("Vol", ID, label = round(Vol, 2))) +
   geom_label(data = filter(sp10_rankings_2020, Class == "Reptilia"), aes("IUCN", ID, label = IUCN_code, fill = IUCN_code)) +
   geom_text(data = filter(sp10_rankings_2020, Class == "Reptilia"), aes("App", ID, label = Appendix)) +
-  scale_fill_manual(values = c("red", "darkorange", "white", "grey70")) +
+  scale_fill_manual(values = c("red", "dodgerblue", "grey70", "goldenrod1")) +
   annotate("text", label = "Volume trends", x = 7, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Source\n switching", x = 9.5, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Reporting\n inconsistencies", x = 12.5, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Legal acquisition", x = 16, y = 11, fontface = "bold", size = 3.5) +
-  coord_cartesian(ylim = c(0.5, 11.5), expand = FALSE, xlim = c(0.5, 18.5)) +
+  annotate("text", label = "Code\n switching", x = 10, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Legal acquisition", x = 13, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Reporting\n inconsistencies", x = 16.5, y = 11, fontface = "bold", size = 3.5) +
+  coord_cartesian(ylim = c(0.5, 11.5), expand = FALSE, xlim = c(0.5, 19.5)) +
   xlab("") + ylab("") +
   theme_minimal(base_size = 10) +
   theme(legend.position = "none",
         axis.text.x = element_text(face=c("bold","bold","bold", "bold","bold", "plain",
                                           "plain", "plain", "plain", "plain", "plain",
                                           "plain", "plain", "plain", "plain", "plain",
-                                          "plain", "bold"), colour = "black"),
+                                          "plain", "plain", "bold"), colour = "black"),
         axis.text.y = element_text(face = "bold.italic", colour = "black", size = 12))
 
 C_sia <- grid::rasterGrob(jpeg::readJPEG("Data/Images/C_siamensis.jpg"), interpolate = TRUE)
+G_pseu <- grid::rasterGrob(jpeg::readJPEG("Data/Images/G_pseu2.jpg"), interpolate = TRUE)
 T_kle <- grid::rasterGrob(jpeg::readJPEG("Data/Images/T_kleinmanni.jpg"), interpolate = TRUE)
-M_tor <- grid::rasterGrob(jpeg::readJPEG("Data/Images/M_torneri.jpg"), interpolate = TRUE)
+#M_tor <- grid::rasterGrob(jpeg::readJPEG("Data/Images/M_torneri.jpg"), interpolate = TRUE)
 A_rad <- grid::rasterGrob(jpeg::readJPEG("Data/Images/A_radiata.jpg"), interpolate = TRUE)
 
 top10_plt2 <- ggarrange(sp10_plt_rept, sp10_plt_2020_rept, nrow = 2, labels = c("A. 2000 - 2020", "B. 2020     "))
-images2 <- ggarrange(C_sia, T_kle, M_tor, A_rad, nrow = 1, labels = c("C.", "D.", "E.", "F."))
+images2 <- ggarrange(C_sia, G_pseu, T_kle, A_rad, nrow = 1, labels = c("C.", "D.", "E.", "F."))
 
 top10_plt_final2 <- ggarrange(top10_plt2, images2, nrow = 2, heights = c(1, .3))
 
@@ -486,13 +486,15 @@ ggplot(Aves_checked_WOE, aes(Year, Ovr_score)) +
 
 
 #### Mean species ####
-mean_species_sum <- AvesRept_checked_WOE %>% filter(Taxon != "Rhodonessa caryophyllacea") %>%
+mean_species_sum <- AvesRept_checked_WOE %>% 
   group_by(Class, Taxon) %>% 
-  summarise(mean = round(mean(Ovr_score), digits = 2), min = round(min(Ovr_score), digits = 2),
+  summarise(mean = round(mean(Ovr_score), digits = 2), 
+            min = round(min(Ovr_score), digits = 2),
             max = round(max(Ovr_score), digits = 2),
             vol = sum(Vol),
             Exporters = n_distinct(Exporter),
-            Year = n_distinct(Year), events = n()) %>% slice_max(mean, n=10)
+            Year = n_distinct(Year), events = n()) %>% slice_max(mean, n=10) %>%
+  unite("Range", min:max, sep = " - ")
 
 write.csv(mean_species_sum, "Summaries/Figures/Mean_species.csv")
 
@@ -506,7 +508,7 @@ f <- AvesRept_checked_WOE %>% filter(Taxon == "Agapornis personatus", Exporter =
          Check_5, Check_6, Check_7, Check_8,
          Check_9, Check_10, Check_11, Check_12, Ovr_score)
 
-Full %>% filter(Taxon == "Agapornis personatus", Exporter == "CN", Source == "F")
+Full %>% filter(Taxon == "Pelodiscus sinensis", Exporter == "TH", Year == "2005")
 
 #### Extinct species ####
 
@@ -523,7 +525,6 @@ CITES_MASTER %>% filter(Taxon == "Anas oustaleti")
 #### Mean exporters ####
 
 mean_Exporter_sum <- AvesRept_checked_WOE %>%
-  filter(Taxon != "Rhodonessa caryophyllacea") %>%
   group_by(Class, region, Exporter) %>% 
   summarise(mean = round(mean(Ovr_score), digits = 2), min = round(min(Ovr_score), digits = 2),
             max = round(max(Ovr_score), digits = 2),
@@ -537,20 +538,20 @@ write.csv(mean_Exporter_sum, "Summaries/Figures/Mean_exporter.csv")
 
 ## Aves
 Aves_order1 <- AvesRept_checked_WOE %>%
-  filter(Taxon != "Rhodonessa caryophyllacea", Class == "Aves",
+  filter( Class == "Aves",
          region %in% c("Africa", "Americas")) %>%
   group_by(region, Exporter) %>% reframe(mean = median(Ovr_score)) %>%
   arrange(region, mean)
 
 Aves_order2 <- AvesRept_checked_WOE %>%
-  filter(Taxon != "Rhodonessa caryophyllacea", Class == "Aves",
+  filter( Class == "Aves",
          region %in% c("Asia", "Europe", "Oceania")) %>%
   group_by(region, Exporter) %>% reframe(mean = median(Ovr_score)) %>%
   arrange(region, mean)
 
 Aves_exp_plt1 <- 
   ggplot(AvesRept_checked_WOE %>%
-         filter(Taxon != "Rhodonessa caryophyllacea", Class == "Aves",
+         filter(Class == "Aves",
                 region %in% c("Africa", "Americas")), 
        aes(Ovr_score, Exporter, fill = region)) +
   scale_fill_manual(values = c("tomato", "dodgerblue")) +
@@ -562,7 +563,7 @@ Aves_exp_plt1 <-
 
 Aves_exp_plt2 <- 
   ggplot(AvesRept_checked_WOE %>%
-           filter(Taxon != "Rhodonessa caryophyllacea", Class == "Aves",
+           filter( Class == "Aves",
                   region %in% c("Asia", "Europe", "Oceania")), 
          aes(Ovr_score, Exporter, fill = region)) +
   scale_fill_manual(values = c("chartreuse4", "goldenrod4", "purple4")) +
@@ -574,7 +575,7 @@ Aves_exp_plt2 <-
 
 Aves_reg_plt <- 
   ggplot(AvesRept_checked_WOE %>%
-           filter(Taxon != "Rhodonessa caryophyllacea", Class == "Aves"), 
+           filter( Class == "Aves"), 
          aes(region, Ovr_score, fill = region)) +
   geom_point(alpha = .05, position = position_jitter()) +
   geom_boxplot(outlier.shape = NA, alpha = .5) +
@@ -594,20 +595,20 @@ ggsave("Summaries/Figures/Country_regions_aves.png", Countryboxes_aves, device =
 
 ## Rept
 Rept_order1 <- AvesRept_checked_WOE %>%
-  filter(Taxon != "Rhodonessa caryophyllacea", Class == "Reptilia",
+  filter( Class == "Reptilia",
          region %in% c("Africa", "Americas")) %>%
   group_by(region, Exporter) %>% reframe(mean = median(Ovr_score)) %>%
   arrange(region, mean)
 
 Rept_order2 <- AvesRept_checked_WOE %>%
-  filter(Taxon != "Rhodonessa caryophyllacea", Class == "Reptilia",
+  filter( Class == "Reptilia",
          region %in% c("Asia", "Europe", "Oceania")) %>%
   group_by(region, Exporter) %>% reframe(mean = median(Ovr_score)) %>%
   arrange(region, mean)
 
 Rept_exp_plt1 <- 
   ggplot(AvesRept_checked_WOE %>%
-           filter(Taxon != "Rhodonessa caryophyllacea", Class == "Reptilia",
+           filter( Class == "Reptilia",
                   region %in% c("Africa", "Americas")), 
          aes(Ovr_score, Exporter, fill = region)) +
   scale_fill_manual(values = c("tomato", "dodgerblue")) +
@@ -619,7 +620,7 @@ Rept_exp_plt1 <-
 
 Rept_exp_plt2 <- 
   ggplot(AvesRept_checked_WOE %>%
-           filter(Taxon != "Rhodonessa caryophyllacea", Class == "Reptilia",
+           filter( Class == "Reptilia",
                   region %in% c("Asia", "Europe", "Oceania")), 
          aes(Ovr_score, Exporter, fill = region)) +
   scale_fill_manual(values = c("chartreuse4", "goldenrod4", "purple4")) +
@@ -631,7 +632,7 @@ Rept_exp_plt2 <-
 
 Rept_reg_plt <- 
   ggplot(AvesRept_checked_WOE %>%
-           filter(Taxon != "Rhodonessa caryophyllacea", Class == "Reptilia"), 
+           filter(Class == "Reptilia"), 
          aes(region, Ovr_score, fill = region)) +
   geom_point(alpha = .05, position = position_jitter()) +
   geom_boxplot(outlier.shape = NA, alpha = .5) +
