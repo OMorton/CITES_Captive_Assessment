@@ -227,71 +227,69 @@ sp10_checks <- AvesRept_checked_WOE %>%
   group_by(Class) %>% arrange(Ovr_score) %>% group_by(ID, Class)%>%
   mutate(Num = cur_group_id())
 
+Aves_plt_order <- sp10_rankings %>% filter(Class == "Aves") %>% arrange(Ovr_score)
+
 sp10_plt_aves <- ggplot(filter(sp10_checks, Class == "Aves"), aes(Check, reorder(ID, Ovr_score))) +
   geom_point(colour = NA) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2010_Cyanoramphus novaezelandiae_CZ", Ovr_score = 1), xmin = 5.5, xmax = 8.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2000_Agapornis personatus_CN", Ovr_score = 1), xmin = 5.5, xmax = 8.5, 
             ymin = -Inf, ymax = Inf, fill = "lightskyblue1", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2010_Cyanoramphus novaezelandiae_CZ", Ovr_score = 1),xmin = 8.5, xmax = 10.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2000_Agapornis personatus_CN", Ovr_score = 1),xmin = 8.5, xmax = 11.5, 
             ymin = -Inf, ymax = Inf, fill = "darkseagreen2", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2010_Cyanoramphus novaezelandiae_CZ", Ovr_score = 1),xmin = 10.5, xmax = 14.5, 
-            ymin = -Inf, ymax = Inf, fill = "lightgoldenrod", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2010_Cyanoramphus novaezelandiae_CZ", Ovr_score = 1),xmin = 14.5, xmax = 17.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2000_Agapornis personatus_CN", Ovr_score = 1),xmin = 11.5, xmax = 14.5, 
             ymin = -Inf, ymax = Inf, fill = "rosybrown1", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2010_Cyanoramphus novaezelandiae_CZ", Ovr_score = 1),xmin = 17.5, xmax = 18.5, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2000_Agapornis personatus_CN", Ovr_score = 1),xmin = 14.5, xmax = 18.5, 
+            ymin = -Inf, ymax = Inf, fill = "lightgoldenrod", alpha = .4) +
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2000_Agapornis personatus_CN", Ovr_score = 1),xmin = 18.5, xmax = 19.5, 
             ymin = -Inf, ymax = 10.5, fill = "grey85", alpha = .4) +
-  geom_rect(data = data.frame(Check = "Check_1", ID = "2010_Cyanoramphus novaezelandiae_CZ", Ovr_score = 1), xmin = -Inf, xmax = Inf, 
+  geom_rect(data = data.frame(Check = "Check_1", ID = "2000_Agapornis personatus_CN", Ovr_score = 1), xmin = -Inf, xmax = Inf, 
             ymin = 10.5, ymax = 13, fill = "white") +
   geom_point(shape = 4, colour = "darkred", size = 4) +
   scale_x_discrete(drop=FALSE, limits = c("Vol", "Exporter","Year",  "IUCN", "App", "Check_1", "Check_2", "Check_3", "Check_4", "Check_5",
                                           "Check_6", "Check_7", "Check_8", "Check_9", "Check_10",
-                                          "Check_11", "Check_12", "Score"),
+                                          "Check_11", "Check_12","Check_13", "Score"),
                    labels = c("Vol", "Exporter", "Year",  "IUCN", "App", "1", "2", "3", "4", "5",
-                              "6", "7", "8", "9", "10", "11", "12", "Score")) +
-  scale_y_discrete(labels = c("Cyanoramphus malherbi", "Cyanoramphus novaezelandiae",
-                              "Psittacus erithacus", "Chlamydotis macqueenii",
-                              "Cyanoramphus novaezelandiae", "Psittacus erithacus", 
-                              "Psittacus erithacus", "Psittacus erithacus",
-                              "Psittacus erithacus", "Psittacus erithacus")) + 
+                              "6", "7", "8", "9", "10", "11", "12","13", "Score")) +
+  scale_y_discrete(labels = Aves_plt_order$Taxon) + 
   geom_text(data = filter(sp10_rankings, Class == "Aves"), aes("Score", ID, label = round(Ovr_score, 2)), fontface = "bold") +
   geom_text(data = filter(sp10_rankings, Class == "Aves"), aes("Year", ID, label = round(Year, 2))) +
   geom_text(data = filter(sp10_rankings, Class == "Aves"), aes("Exporter", ID, label = Exporter)) +
   geom_text(data = filter(sp10_rankings, Class == "Aves"), aes("Vol", ID, label = round(Vol, 2))) +
   geom_label(data = filter(sp10_rankings, Class == "Aves"), aes("IUCN", ID, label = IUCN_code, fill = IUCN_code)) +
   geom_text(data = filter(sp10_rankings, Class == "Aves"), aes("App", ID, label = Appendix)) +
-  scale_fill_manual(values = c("red", "darkorange", "grey70")) +
+ # scale_fill_manual(values = c("red", "darkorange", "grey70")) +
   annotate("text", label = "Volume trends", x = 7, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Source\n switching", x = 9.5, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Reporting\n inconsistencies", x = 12.5, y = 11, fontface = "bold", size = 3.5) +
-  annotate("text", label = "Legal acquisition", x = 16, y = 11, fontface = "bold", size = 3.5) +
-  coord_cartesian(ylim = c(0.5, 11.5), expand = FALSE, xlim = c(0.5, 18.5)) +
+  annotate("text", label = "Code\n switching", x = 9.5, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Legal acquisition", x = 12.5, y = 11, fontface = "bold", size = 3.5) +
+  annotate("text", label = "Reporting\n inconsistencies", x = 16, y = 11, fontface = "bold", size = 3.5) +
+  coord_cartesian(ylim = c(0.5, 11.5), expand = FALSE, xlim = c(0.5, 19.5)) +
   xlab("") + ylab("") +
   theme_minimal(base_size = 10) +
   theme(legend.position = "none",
         axis.text.x = element_text(face=c("bold","bold","bold", "bold","bold", "plain",
                                           "plain", "plain", "plain", "plain", "plain",
                                           "plain", "plain", "plain", "plain", "plain",
-                                          "plain", "bold"), colour = "black"),
+                                          "plain", "plain", "bold"), colour = "black"),
         axis.text.y = element_text(face = "bold.italic", colour = "black", size = 12))
 
 ## 2020
 sp10_rankings_2020 <- AvesRept_checked_WOE %>% 
-  select(ROW_ID, Year, Taxon, Class, Order, Exporter, Vol, IUCN_code, ROW_ID, Appendix, 69:98) %>%
+  select(ROW_ID, Year, Taxon, Class, Order, Exporter, Vol, IUCN_code, ROW_ID, Appendix, 69:111) %>%
   filter(Year == 2020) %>%
   unite("ID", c(Year, Taxon, Exporter), remove = FALSE) %>% group_by(Class) %>%
-  slice_max(Ovr_score, n = 10) %>% select(-Check_6_7_equivalent_reporting, - Check_10_11_12_INVALID) %>%
+  slice_max(Ovr_score, n = 10) %>%
   mutate(IUCN_code = ifelse(IUCN_code == "Not assessed", "NE", IUCN_code))
 
 sp10_checks_2020 <- AvesRept_checked_WOE  %>% filter(Year == 2020) %>% group_by(Class) %>%
   slice_max(Ovr_score, n = 10) %>%
   select(Year, Taxon, Exporter, Check_1, Check_2, Check_3, Check_4, 
          Check_5, Check_6, Check_7, Check_8,
-         Check_9, Check_10, Check_11, Check_12) %>%
+         Check_9, Check_10, Check_11, Check_12, Check_13) %>%
   unite("ID", c(Year, Taxon, Exporter), remove = TRUE) %>%
   pivot_longer(!c(ID, Class), names_to = "Check", values_to = "Fail") %>%
   filter(Fail == TRUE) %>%
   mutate(Check = factor(Check, levels = c("Check_1", "Check_2", "Check_3", "Check_4", "Check_5",
                                           "Check_6", "Check_7", "Check_8", "Check_9", "Check_10",
-                                          "Check_11", "Check_12"))) %>%
+                                          "Check_11", "Check_12", "Check_13"))) %>%
   left_join(select(sp10_rankings_2020, ID, Ovr_score))
 
 sp10_plt_2020_aves <- ggplot(filter(sp10_checks_2020, Class == "Aves"), aes(Check, reorder(ID, Ovr_score))) + 
@@ -503,11 +501,12 @@ f <- Aves_checked_WOE %>% filter(Taxon == "Leucopsar rothschildi") %>% group_by(
 f <- Aves_checked_WOE %>% filter(Taxon == "Leucopsar rothschildi") %>% 
   select(Exporter, Year, Vol, Ovr_score)
   tally(Vol)
-f <- AvesRept_checked_WOE %>% filter(Taxon == "Psittacus erithacus", Exporter == "ZA") %>%   
-  select(Year, Taxon, Exporter, Check_1, Check_2, Check_3, Check_4, 
+f <- AvesRept_checked_WOE %>% filter(Taxon == "Agapornis personatus", Exporter == "CN", Year == "2000") %>%   
+  select(Year, Taxon, Exporter, Source_traded, Year_F1,  Check_1, Check_2, Check_3, Check_4, 
          Check_5, Check_6, Check_7, Check_8,
          Check_9, Check_10, Check_11, Check_12, Ovr_score)
 
+Full %>% filter(Taxon == "Agapornis personatus", Exporter == "CN", Source == "F")
 
 #### Extinct species ####
 
