@@ -182,7 +182,19 @@ Focal_Comm_vol <- CITES_TRUE %>%
   cat("Compiling historic live imports to exporting country\n")
   
   ## get the live imports of any kind per importer per year
-  Historic_live_imports <- CITES_TRUE %>% 
+  Historic_live_imports <- CITES_MASTER %>% filter(Unit == "Number of specimens" | is.na(Unit),
+                                                   Class %in% focal_class) %>%
+    ## correct the two potential misidents in the data
+    mutate(Taxon = ifelse(Taxon == "Poephila cincta", "Poephila cincta cincta", Taxon),
+           Taxon = ifelse(Taxon == "Lophura hatinhensis", "Lophura edwardsi", Taxon)) %>% 
+    left_join(WOE_Factors_all, by = c("Class", "Term")) %>% 
+    left_join(WOE_Factors_sp, by = c("Class", "Term", "Taxon" = "Taxa_applicable")) %>%
+    mutate(Factor = ifelse(is.na(Factor.y), Factor.x, Factor.y)) %>%
+    select(-Factor.x, -Factor.y) %>%
+    ## Calculate WOEs - you take the quantity traded multiplied by conversion term.
+    mutate(Quantity = Factor*Quantity) %>%
+    ## Keep only records that could be converted
+    filter(!is.na(Quantity)) %>%
     filter(Class %in% focal_class, Term == "live") %>%
     group_by(Year, Taxon, Class, Importer) %>% 
     reframe(Vol = sum(Quantity)) %>%
