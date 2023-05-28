@@ -95,7 +95,6 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
   cat("Summarising CITES data\n")
   
   ## Focus on only the target taxa and time frame and remove ambiguous records using "ssp" or "hybrid"
-  ## 30,868 records
   CITES_Focal_Capt <- CITES_TRUE %>% 
     filter(Class %in% focal_class, Year %in% 2000:2020,
            ## R added to align with UNEP
@@ -117,19 +116,7 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
   cat(paste0("Warning: There were ", n_distinct(Check), " species that appeared in multiple Appendices from 1 Exporter. See Check.\n" ))
   
   ## Output main data of summed term/woe records to check
-  CITES_Focal_Capt <- CITES_TRUE %>% 
-    filter(Class %in% focal_class, Year %in% 2000:2020,
-           ## R added to align with UNEP
-           Source %in% c("C", "D", "F", "R"), 
-           ## Focus on ER trade in number of individuals
-           Reporter.type == focal_reporter, 
-           Appendix != "N") %>%
-    ## Summarise to grouped vol
-    group_by_at(Sum_group) %>% 
-    reframe(Vol = sum(Quantity), 
-            Source_traded = paste(unique(Source), collapse = " "), 
-            Purpose_traded = paste(unique(Purpose), collapse = " ")) %>%
-    filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon)) %>%
+  CITES_Focal_Capt <- CITES_Focal_Capt %>% 
     ungroup() %>%
     ## add unique id
     mutate(ROW_ID = row_number())
@@ -180,7 +167,7 @@ Focal_Comm_vol <- CITES_TRUE %>%
 #### Historic imports ####
   
   cat("Compiling historic live imports to exporting country\n")
-  
+  if(focal_level == "woe") { 
   ## get the live imports of any kind per importer per year
   Historic_live_imports <- CITES_MASTER %>% filter(Unit == "Number of specimens" | is.na(Unit),
                                                    Class %in% focal_class) %>%
@@ -201,6 +188,20 @@ Focal_Comm_vol <- CITES_TRUE %>%
     filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon)) %>% 
     group_by(Taxon, Importer) %>%
     reframe(Years_imported = paste(Year, collapse=', '))
+  } else {
+    Historic_live_imports <- CITES_MASTER %>% filter(Unit == "Number of specimens" | is.na(Unit),
+                                                     Class %in% focal_class) %>%
+      ## correct the two potential misidents in the data
+      mutate(Taxon = ifelse(Taxon == "Poephila cincta", "Poephila cincta cincta", Taxon),
+             Taxon = ifelse(Taxon == "Lophura hatinhensis", "Lophura edwardsi", Taxon)) %>% 
+      filter(!is.na(Quantity)) %>%
+      filter(Class %in% focal_class, Term == "live") %>%
+      group_by(Year, Taxon, Class, Importer) %>% 
+      reframe(Vol = sum(Quantity)) %>%
+      filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon)) %>% 
+      group_by(Taxon, Importer) %>%
+      reframe(Years_imported = paste(Year, collapse=', '))
+  }
 
 #### Historic sources ####  
   
@@ -691,11 +692,11 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
       
     ## For subsequent use check are total ER and IR reported volumes roughly
     ## equivalent (plus/minus 25%)
-    Check_10_11_12_equivalent_reporting =
+    Check_10_11_equivalent_reporting =
       ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast) <= 
-               (Vol + Year_0_vol_Wild + Year_0_vol_Ranch)*1.25 &
+               (Year_0_vol_Capt + Year_0_vol_Wild + Year_0_vol_Ranch)*1.25 &
                (Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast) >= 
-               (Vol + Year_0_vol_Wild + Year_0_vol_Ranch)*0.75,
+               (Year_0_vol_Capt + Year_0_vol_Wild + Year_0_vol_Ranch)*0.75,
              TRUE, FALSE),
     
     ## 10 - Aligns with AC31 Doc 19.1 Criteria iv) Reporting inconsistencies
@@ -704,7 +705,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     Check_10 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
-      Check_10_11_12_equivalent_reporting == TRUE &
+      Check_10_11_equivalent_reporting == TRUE &
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
                        (abs(Vol/(Vol + Year_0_vol_Wild) -
@@ -729,7 +730,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     Check_11 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
-      Check_10_11_12_equivalent_reporting == TRUE &
+      Check_10_11_equivalent_reporting == TRUE &
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
                        (abs(Year_0_vol_Capt/(Vol) -
@@ -748,11 +749,18 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
                               Ranch_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)),
                      TRUE, FALSE),
     
-    ## 12 - Commercial to non commercial ration differed by >10%.
+    Check_12_equivalent_reporting =
+      ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast) <= 
+               (Year_0_vol_Capt + Year_0_vol_Ranch)*1.25 &
+               (Capt_Vol_Contrast + Ranch_Vol_Contrast) >= 
+               (Year_0_vol_Capt + Year_0_vol_Ranch)*0.75,
+             TRUE, FALSE),
+    
+    ## 12 - Commercial to non commercial ratio differed by >10%.
     Check_12 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
-      Check_10_11_12_equivalent_reporting == TRUE & 
+      Check_12_equivalent_reporting == TRUE & 
         ## Check that the difference in proportion between ER and IR reported 
         ## commerical trade is >10%
         (abs(Comm_vol/(Vol) -
