@@ -194,6 +194,7 @@ Focal_Comm_vol <- CITES_TRUE %>%
       ## correct the two potential misidents in the data
       mutate(Taxon = ifelse(Taxon == "Poephila cincta", "Poephila cincta cincta", Taxon),
              Taxon = ifelse(Taxon == "Lophura hatinhensis", "Lophura edwardsi", Taxon)) %>% 
+      ## Keep only records that could be converted
       filter(!is.na(Quantity)) %>%
       filter(Class %in% focal_class, Term == "live") %>%
       group_by(Year, Taxon, Class, Importer) %>% 
@@ -692,7 +693,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
       
     ## For subsequent use check are total ER and IR reported volumes roughly
     ## equivalent (plus/minus 25%)
-    Check_10_11_equivalent_reporting =
+    Check_10_11_12_equivalent_reporting =
       ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast) <= 
                (Year_0_vol_Capt + Year_0_vol_Wild + Year_0_vol_Ranch)*1.25 &
                (Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast) >= 
@@ -705,7 +706,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     Check_10 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
-      Check_10_11_equivalent_reporting == TRUE &
+      Check_10_11_12_equivalent_reporting == TRUE &
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
                        (abs(Vol/(Vol + Year_0_vol_Wild) -
@@ -730,7 +731,7 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     Check_11 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
-      Check_10_11_equivalent_reporting == TRUE &
+      Check_10_11_12_equivalent_reporting == TRUE &
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
                        (abs(Year_0_vol_Capt/(Vol) -
@@ -749,18 +750,11 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
                               Ranch_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)),
                      TRUE, FALSE),
     
-    Check_12_equivalent_reporting =
-      ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast) <= 
-               (Year_0_vol_Capt + Year_0_vol_Ranch)*1.25 &
-               (Capt_Vol_Contrast + Ranch_Vol_Contrast) >= 
-               (Year_0_vol_Capt + Year_0_vol_Ranch)*0.75,
-             TRUE, FALSE),
-    
     ## 12 - Commercial to non commercial ratio differed by >10%.
     Check_12 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
-      Check_12_equivalent_reporting == TRUE & 
+      Check_10_11_12_equivalent_reporting == TRUE & 
         ## Check that the difference in proportion between ER and IR reported 
         ## commerical trade is >10%
         (abs(Comm_vol/(Vol) -
