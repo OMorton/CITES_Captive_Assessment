@@ -8,6 +8,7 @@ options(scipen = 999, na.action = "na.pass")
 .libPaths("C:/Packages") ## Set up for working from home.
 
 library(tidyverse)
+library(tidybayes)
 
 #### Data prep function ####
 
@@ -709,20 +710,10 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
       Check_10_11_12_equivalent_reporting == TRUE &
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
-                       (abs(Vol/(Vol + Year_0_vol_Wild) -
-                          Capt_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast)) >= 0.1) &
-        ## Check there is a corresponding difference in ER and IR reported
-        ## wild trade.
-        ## This is important to confirm there is a compensatory change in both
-        ## sources
-                       (abs(Year_0_vol_Wild/(Vol + Year_0_vol_Wild) -
-                          Wild_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast)) >= 0.1) &
-        ## Final step is just to confirm that one change is an increase (+) 
-        ## and the other is a decrease (-).
-                       sign(Year_0_vol_Wild/(Vol + Year_0_vol_Wild) -
-                              Wild_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast)) != 
-                       sign(Vol/(Vol + Year_0_vol_Wild) -
-                              Capt_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast + Wild_Vol_Contrast)),
+        abs(1 - (Vol/(Capt_Vol_Contrast + Ranch_Vol_Contrast))) >= 0.1 &
+        abs(1 - (Year_0_vol_Wild/(Wild_Vol_Contrast))) >= 0.1 &
+        sign(1 - (Vol/(Capt_Vol_Contrast + Ranch_Vol_Contrast))) !=
+        sign(1 - (Year_0_vol_Wild/(Wild_Vol_Contrast))),
                      TRUE, FALSE),
     
     ## 11 - Aligns with AC31 Doc 19.1 Criteria iv) Reporting inconsistencies
@@ -734,20 +725,10 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
       Check_10_11_12_equivalent_reporting == TRUE &
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
-                       (abs(Year_0_vol_Capt/(Vol) -
-                          Capt_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
-        ## Check there is a corresponding difference in ER and IR reported
-        ## ranched trade.
-        ## This is important to confirm there is a compensatory change in both
-        ## sources
-                       (abs(Year_0_vol_Ranch/(Vol) -
-                          Ranch_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
-        ## Final step is just to confirm that one change is an increase (+) 
-        ## and the other is a decrease (-).
-                       sign(Year_0_vol_Capt/(Vol) -
-                              Capt_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) != 
-                       sign(Year_0_vol_Ranch/(Vol) -
-                              Ranch_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)),
+        abs(1 - (Year_0_vol_Capt/(Capt_Vol_Contrast))) >= 0.1 &
+        abs(1 - (Year_0_vol_Ranch/(Ranch_Vol_Contrast))) >= 0.1 &
+        sign(1 - (Year_0_vol_Capt/(Capt_Vol_Contrast))) !=
+        sign(1 - (Year_0_vol_Ranch/(Ranch_Vol_Contrast))),
                      TRUE, FALSE),
     
     ## 12 - Commercial to non commercial ratio differed by >10%.
@@ -757,20 +738,10 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
       Check_10_11_12_equivalent_reporting == TRUE & 
         ## Check that the difference in proportion between ER and IR reported 
         ## commerical trade is >10%
-        (abs(Comm_vol/(Vol) -
-                  Comm_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
-        ## Check there is a corresponding difference in ER and IR reported
-        ## ranched trade.
-        ## This is important to confirm there is a compensatory change in both
-        ## sources
-        (abs(NonComm_vol + NA_vol/(Vol) -
-               NonComm_Vol_Contrast + NA_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) >= 0.1) &
-        ## Final step is just to confirm that one change is an increase (+) 
-        ## and the other is a decrease (-).
-        sign(Comm_vol/(Vol) -
-               Comm_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)) != 
-        sign(NonComm_vol + NA_vol/(Vol) -
-               NonComm_Vol_Contrast + NA_Vol_Contrast/(Capt_Vol_Contrast + Ranch_Vol_Contrast)),
+        bs(1 - (Comm_vol/(Comm_Vol_Contrast))) >= 0.1 &
+        abs(1 - ((NonComm_vol + NA_vol)/(NonComm_Vol_Contrast + NA_Vol_Contrast))) >= 0.1 &
+        sign(1 - (Comm_vol/(Comm_Vol_Contrast))) !=
+        sign(1 - ((NonComm_vol + NA_vol)/(NonComm_Vol_Contrast + NA_Vol_Contrast))),
       TRUE, FALSE),
       
     ## 13 - Aligns with AC31 Doc 19.1 Criterion v) Incorrect application of 
@@ -956,4 +927,32 @@ ID_dataseries <- function(data = data, ID_list) {
   Output <- rbind(Output, dat)
   }
 return(Output)
+}
+
+#### Model check ####
+
+## Simple convenience function to do and present 4 posterior predictive checks.
+## Will to updated to include more/flexibility
+## model - model fitted
+## data - the data used to fit the model
+model_check <- function(model = model, data = data, 
+                        path = "Models/Scores/Aves_scores_HG_plt.png") {
+  
+  p1 <- pp_check(model) + theme_minimal() + theme(legend.position = "none")
+  p2 <- pp_check(model, type = "ecdf_overlay") + theme_minimal() + theme(legend.position = "none")
+  p3 <- pp_check(model, type = "stat_2d") + theme_minimal() + theme(legend.position = "none")
+  
+  p4 <- data %>%
+    add_residual_draws(model) %>%
+    ggplot(aes(x = .row, y = .residual)) +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    stat_pointinterval(colour = "#011f4b", alpha = .25) + 
+    theme_minimal()
+  
+  ch <- ggarrange(p1, p2, p3, p4, nrow = 2, ncol = 2,
+                  labels = c("A.", "B.", "C.", "D."))
+  
+  ggsave(paste0(path), ch, device = "png", 
+         width = 15, height = 15, bg = "white")
+  return(ch)
 }
