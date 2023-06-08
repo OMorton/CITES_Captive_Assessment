@@ -703,33 +703,63 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
     
     ## 10 - Aligns with AC31 Doc 19.1 Criteria iv) Reporting inconsistencies
     ## Assesses captive to wild source switching in ER and IR trade.
-    ## Is there evidence that reporters source codes switch/diagree?
+    ## Is there evidence that reporters source codes switch/disagree?
+    
+    ## adjustment check some contrasts or sources are zero therefore you
+    ## end up with 0/0 or 0/x or  x/0. So where it is 0 we convert to 0.1
+    ## this small adjustment means even a volume of 1 record would be flagged.
+    Check10_CDFR_sum_contrast = ifelse(Capt_Vol_Contrast + Ranch_Vol_Contrast == 0,
+                              0.1, Capt_Vol_Contrast + Ranch_Vol_Contrast),
+    Check10_WUX_sum = ifelse(Year_0_vol_Wild == 0,
+                             0.1, Year_0_vol_Wild),
+    Check10_WUX_sum_contrast = ifelse(Wild_Vol_Contrast == 0,
+                                      0.1, Wild_Vol_Contrast),
     Check_10 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
       Check_10_11_12_equivalent_reporting == TRUE &
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
-        abs(1 - (Vol/(Capt_Vol_Contrast + Ranch_Vol_Contrast))) >= 0.1 &
-        abs(1 - (Year_0_vol_Wild/(Wild_Vol_Contrast))) >= 0.1 &
-        sign(1 - (Vol/(Capt_Vol_Contrast + Ranch_Vol_Contrast))) !=
-        sign(1 - (Year_0_vol_Wild/(Wild_Vol_Contrast))),
+        abs(1 - (Vol/(Check10_CDFR_sum_contrast))) >= 0.1 &
+        abs(1 - (Check10_WUX_sum/(Check10_WUX_sum_contrast))) >= 0.1 &
+        sign(1 - (Vol/(Check10_CDFR_sum_contrast))) !=
+        sign(1 - (Check10_WUX_sum/(Check10_WUX_sum_contrast))),
                      TRUE, FALSE),
     
     ## 11 - Aligns with AC31 Doc 19.1 Criteria iv) Reporting inconsistencies
     ## Assesses captive to ranch source switching in ER and IR trade.
-    ## Is there evidence that reporters source codes switch/diagree?    
+    ## Is there evidence that reporters source codes switch/diagree?
+    ## adjustment check some contrasts or sources are zero therefore you
+    ## end up with 0/0 or 0/x or  x/0. So where it is 0 we convert to 0.1
+    ## this small adjustment means even a volume of 1 record would be flagged.
+    Check11_CDF_sum = ifelse(Year_0_vol_Capt == 0,
+                                       0.1, Year_0_vol_Capt),
+    Check11_CDF_sum_contrast = ifelse(Capt_Vol_Contrast == 0,
+                             0.1, Capt_Vol_Contrast),
+    Check11_R_sum = ifelse(Year_0_vol_Ranch == 0,
+                             0.1, Year_0_vol_Ranch),
+    Check11_R_sum_contrast = ifelse(Ranch_Vol_Contrast == 0,
+                                      0.1, Ranch_Vol_Contrast),
+    
     Check_11 = ifelse(
       ## Checks that total volumes are largely equivalent and therefore 
       ## the proportions can be compared
       Check_10_11_12_equivalent_reporting == TRUE &
         ## Check that the difference in proportion between ER and IR reported 
         ## captive trade is >10%
-        abs(1 - (Year_0_vol_Capt/(Capt_Vol_Contrast))) >= 0.1 &
-        abs(1 - (Year_0_vol_Ranch/(Ranch_Vol_Contrast))) >= 0.1 &
-        sign(1 - (Year_0_vol_Capt/(Capt_Vol_Contrast))) !=
-        sign(1 - (Year_0_vol_Ranch/(Ranch_Vol_Contrast))),
+        abs(1 - (Check11_CDF_sum/(Check11_CDF_sum_contrast))) >= 0.1 &
+        abs(1 - (Check11_R_sum/(Check11_R_sum_contrast))) >= 0.1 &
+        sign(1 - (Check11_CDF_sum/(Check11_CDF_sum_contrast))) !=
+        sign(1 - (Check11_R_sum/(Check11_R_sum_contrast))),
                      TRUE, FALSE),
+    Check12_Com_sum = ifelse(Comm_vol == 0,
+                             0.1, Comm_vol),
+    Check12_Com_sum_contrast = ifelse(Comm_Vol_Contrast == 0,
+                                      0.1, Comm_Vol_Contrast),
+    Check12_NANoncomm_sum = ifelse(NonComm_vol + NA_vol == 0,
+                           0.1, NonComm_vol + NA_vol),
+    Check12_NANoncomm_sum_contrast = ifelse(NonComm_Vol_Contrast + NA_Vol_Contrast == 0,
+                                    0.1, NonComm_Vol_Contrast + NA_Vol_Contrast),
     
     ## 12 - Commercial to non commercial ratio differed by >10%.
     Check_12 = ifelse(
@@ -738,10 +768,10 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
       Check_10_11_12_equivalent_reporting == TRUE & 
         ## Check that the difference in proportion between ER and IR reported 
         ## commerical trade is >10%
-        bs(1 - (Comm_vol/(Comm_Vol_Contrast))) >= 0.1 &
-        abs(1 - ((NonComm_vol + NA_vol)/(NonComm_Vol_Contrast + NA_Vol_Contrast))) >= 0.1 &
-        sign(1 - (Comm_vol/(Comm_Vol_Contrast))) !=
-        sign(1 - ((NonComm_vol + NA_vol)/(NonComm_Vol_Contrast + NA_Vol_Contrast))),
+        abs(1 - (Check12_Com_sum/(Check12_Com_sum_contrast))) >= 0.1 &
+        abs(1 - ((Check12_NANoncomm_sum)/(Check12_NANoncomm_sum_contrast))) >= 0.1 &
+        sign(1 - (Check12_Com_sum/(Check12_Com_sum_contrast))) !=
+        sign(1 - ((Check12_NANoncomm_sum)/(Check12_NANoncomm_sum_contrast))),
       TRUE, FALSE),
       
     ## 13 - Aligns with AC31 Doc 19.1 Criterion v) Incorrect application of 
@@ -775,7 +805,12 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
            Check_11 = ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast) == 0,
                             FALSE, Check_11),
            Check_12 = ifelse((Capt_Vol_Contrast + Ranch_Vol_Contrast) == 0,
-                             FALSE, Check_12))
+                             FALSE, Check_12)) %>%
+    select(-Check12_Com_sum, -Check12_NANoncomm_sum, -Check12_Com_sum_contrast,
+           -Check12_NANoncomm_sum_contrast, 
+           -Check11_CDF_sum, -Check11_CDF_sum_contrast, -Check11_R_sum, 
+           -Check11_R_sum_contrast,
+           -Check10_CDFR_sum_contrast, -Check10_WUX_sum, -Check10_WUX_sum_contrast)
   
 if(Class_for_traits == "Aves"){
   
