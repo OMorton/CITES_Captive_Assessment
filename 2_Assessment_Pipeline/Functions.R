@@ -95,8 +95,7 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
   
   cat("Summarising CITES data\n")
   
-  ## Focus on only the target taxa and time frame and remove ambiguous records using "ssp" or "hybrid"
-  CITES_Focal_Capt <- CITES_TRUE %>% 
+  CITES_App_check <- CITES_TRUE %>% 
     filter(Class %in% focal_class, Year %in% 2000:2020,
            ## R added to align with UNEP
            Source %in% c("C", "D", "F", "R"), 
@@ -111,13 +110,26 @@ cat("Targetting class: **", focal_class, "**, at the **", focal_level, "** level
     filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon))
   
   ## Check all 28 species that appear in multiple appendices in a single year (check that none are truly split listed.)
-  Check <- CITES_Focal_Capt %>% group_by_at(Sum_group) %>% tally() %>% 
+  Check <- CITES_App_check %>% group_by_at(Sum_group) %>% tally() %>% 
     filter(n >1) %>% ungroup() %>% distinct(Taxon)
   
   cat(paste0("Warning: There were ", n_distinct(Check), " species that appeared in multiple Appendices from 1 Exporter. See Check.\n" ))
   
+  ## Focus on only the target taxa and time frame and remove ambiguous records using "ssp" or "hybrid"
   ## Output main data of summed term/woe records to check
-  CITES_Focal_Capt <- CITES_Focal_Capt %>% 
+  CITES_Focal_Capt <- CITES_TRUE %>% 
+    filter(Class %in% focal_class, Year %in% 2000:2020,
+           ## R added to align with UNEP
+           Source %in% c("C", "D", "F", "R"), 
+           ## Focus on ER trade in number of individuals
+           Reporter.type == focal_reporter, 
+           Appendix != "N") %>%
+    ## Summarise to grouped vol
+    group_by_at(Sum_group) %>% 
+    reframe(Vol = sum(Quantity), 
+            Source_traded = paste(unique(Source), collapse = " "), 
+            Purpose_traded = paste(unique(Purpose), collapse = " ")) %>%
+    filter(!grepl("spp", Taxon), !grepl("hybrid", Taxon)) %>% 
     ungroup() %>%
     ## add unique id
     mutate(ROW_ID = row_number())
