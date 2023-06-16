@@ -582,32 +582,6 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
                                              Year_3_vol_Wild,
                                              Year_2_vol_Wild,
                                              Year_1_vol_Wild)))) ~ TRUE, 
-      Vol < 0.5*mean(c(Year_5_vol_Capt + Year_5_vol_Ranch, 
-                       Year_4_vol_Capt + Year_4_vol_Ranch,
-                       Year_3_vol_Capt + Year_3_vol_Ranch,
-                       Year_2_vol_Capt + Year_2_vol_Ranch,
-                       Year_1_vol_Capt + Year_1_vol_Ranch)) &
-        abs((Vol - mean(c(Year_5_vol_Capt, 
-                          Year_4_vol_Capt,
-                          Year_3_vol_Capt,
-                          Year_2_vol_Capt,
-                          Year_1_vol_Capt))) +
-              ## Get the wild change relative to 5-year ranch mean
-              (Year_0_vol_Wild - mean(c(Year_5_vol_Wild,
-                                        Year_4_vol_Wild,
-                                        Year_3_vol_Wild,
-                                        Year_2_vol_Wild,
-                                        Year_1_vol_Wild)))) <=
-        0.5*max(abs((Vol - mean(c(Year_5_vol_Capt + Year_5_vol_Ranch, 
-                                  Year_4_vol_Capt + Year_4_vol_Ranch,
-                                  Year_3_vol_Capt + Year_3_vol_Ranch,
-                                  Year_2_vol_Capt + Year_2_vol_Ranch,
-                                  Year_1_vol_Capt + Year_1_vol_Ranch)))),
-                abs(Year_0_vol_Wild - mean(c(Year_5_vol_Wild,
-                                             Year_4_vol_Wild,
-                                             Year_3_vol_Wild,
-                                             Year_2_vol_Wild,
-                                             Year_1_vol_Wild)))) ~ TRUE,
       .default =  FALSE),
     
     ## 5 - Aligns with AC31 Doc 19.1 Criteria iii) Shifts in source codes
@@ -650,34 +624,6 @@ captive_assess <- function(data = data, focal_reporter = "E", Class_for_traits =
                                             Year_3_vol_Ranch,
                                             Year_2_vol_Ranch,
                                             Year_1_vol_Ranch)))) ~ TRUE,
-      ## Now the decrease
-      Year_0_vol_Capt < 0.5*mean(c(Year_5_vol_Capt, 
-                     Year_4_vol_Capt,
-                     Year_3_vol_Capt,
-                     Year_2_vol_Capt,
-                     Year_1_vol_Capt)) &
-        ## Get the captive increase relative to 5-year captive mean
-        abs((Year_0_vol_Capt - mean(c(Year_5_vol_Capt, 
-                          Year_4_vol_Capt,
-                          Year_3_vol_Capt,
-                          Year_2_vol_Capt,
-                          Year_1_vol_Capt))) +
-              ## Get the ranched change relative to 5-year ranch mean
-              (Year_0_vol_Ranch - mean(c(Year_5_vol_Ranch,
-                                         Year_4_vol_Ranch,
-                                         Year_3_vol_Ranch,
-                                         Year_2_vol_Ranch,
-                                         Year_1_vol_Ranch))))  <=
-        0.5*max(abs((Year_0_vol_Capt - mean(c(Year_5_vol_Capt, 
-                                  Year_4_vol_Capt,
-                                  Year_3_vol_Capt,
-                                  Year_2_vol_Capt,
-                                  Year_1_vol_Capt)))),
-                abs(Year_0_vol_Ranch - mean(c(Year_5_vol_Ranch,
-                                              Year_4_vol_Ranch,
-                                              Year_3_vol_Ranch,
-                                              Year_2_vol_Ranch,
-                                              Year_1_vol_Ranch)))) ~ TRUE,
                      .default = FALSE),
     
     
