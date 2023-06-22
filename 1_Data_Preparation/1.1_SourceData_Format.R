@@ -388,7 +388,10 @@ Long_form_nei <- Neighbouring_Countries %>%
   separate_rows(borders) %>%
   rename("Country" = "cca2") %>%
   left_join( select(Neighbouring_Countries, cca2, cca3), 
-             by = c("borders" = "cca3")) %>% rename("borders2" = "cca2")
+             by = c("borders" = "cca3")) %>% rename("borders2" = "cca2") %>%
+  mutate(region = case_when(subregion == "North America" ~ "North America",
+                            subregion != "North America" & region == "Americas" ~ "South and Central America",
+                            .default = region))
 
 write.csv(Long_form_nei, "Outputs/Countries/Neighbours_List.csv", na = "")
 
