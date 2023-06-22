@@ -151,7 +151,10 @@ AvesRept_checked_WOE %>% filter(Check_13 == TRUE)
 
 ## 531 + 142 instances of code D
 inci <- AvesRept_checked_WOE %>% filter(grepl("D", Source_traded)) %>%
-  group_by(Check_13) %>% reframe(inci = n(), vol = sum(Code_D_vol))
+  group_by(Check_13) %>% reframe(inci = n(), vol = sum(Code_D_vol)) %>%
+  ungroup() %>% mutate(tot_inc = sum(inci), tot_vol = sum(vol),
+                       prop_inc = inci/tot_inc *100,
+                       prop_vol = vol/tot_vol *100)
 
 ## 142 possible misuses
 Code_d <- AvesRept_checked_WOE %>% filter(Check_13 == TRUE) %>% select(1:20, Family, Code_D_vol, Appendix, IUCN_code)
@@ -243,8 +246,15 @@ WRC_tally <- AvesRept_checked_WOE %>% filter(Check_10_11_12_equivalent_reporting
   mutate(Launder = case_when(Launder_ReWC == 1 ~ "WC",
                              Launder_ReRC == 1 ~ "RC",
                              Launder_ReWC == 1 & Launder_ReRC == 1 ~ "ERROR",
-                             Launder_ReWC == 0 & Launder_ReRC == 0 ~ "None")) %>%
-  group_by(Launder) %>% summarise(Records = n(), Vol = sum(Vol))%>% 
+                             Launder_ReWC == 0 & Launder_ReRC == 0  & Check_7 == TRUE ~ "Pass-not range",
+                             Launder_ReWC == 0 & Launder_ReRC == 0  & Check_7 == FALSE ~ "Pass-range")) %>%
+  group_by(Launder) %>% 
+  summarise(Records = n(), Vol = sum(Vol))%>% 
+  filter(Launder != "Pass-not range") %>%
+  ungroup() %>% 
+  mutate(tot_rec = sum(Records), tot_vol = sum(Vol),
+         prop_rec = Records/tot_rec *100,
+         prop_vol = Vol/tot_vol *100) %>%
   mutate(csum = rev(cumsum(rev(Records))), 
          pos = Records/2 + lead(csum, 1),
          pos = if_else(is.na(pos), Records/2, pos),
@@ -255,8 +265,13 @@ WRC_tally <- AvesRept_checked_WOE %>% filter(Check_10_11_12_equivalent_reporting
          Vol_c = format(round(as.numeric(Vol), 0), nsmall=0, big.mark=","))
 
 
-Com_tally <- AvesRept_checked_WOE %>% filter(Check_10_11_12_equivalent_reporting == TRUE, Appendix == "I") %>%
+Com_tally <- AvesRept_checked_WOE %>% 
+  filter(Check_10_11_12_equivalent_reporting == TRUE, Appendix == "I", Check_7 == FALSE) %>%
   group_by(Launder_ReCom) %>% summarise(Records = n(), Vol = sum(Vol))%>% 
+  ungroup() %>% 
+  mutate(tot_rec = sum(Records), tot_vol = sum(Vol),
+         prop_rec = Records/tot_rec *100,
+         prop_vol = Vol/tot_vol *100) %>% 
   mutate(csum = rev(cumsum(rev(Records))), 
          pos = Records/2 + lead(csum, 1),
          pos = if_else(is.na(pos), Records/2, pos),
@@ -442,10 +457,12 @@ ggsave("Summaries/Figures/Launder.png", Launder_plt, device = "png",
 #### Launder switch ####
 
 AvesRept_checked_WOE %>% 
-  filter(Check_7 == FALSE) %>% nrow()
+  filter(Check_7 == FALSE) %>% group_by(Launder_SwWC) %>%
+  reframe(inci = n(), vol = sum(Vol)) %>%
+  ungroup() %>% 
+  mutate(tot_inc = sum(inci), tot_vol = sum(vol),
+         prop_inc = inci/tot_inc *100, prop_vol = vol/tot_vol *100)
 
-AvesRept_checked_WOE %>% 
-  filter(Launder_SwWC == 1) %>% nrow()
 
 Launder_swWC <- AvesRept_checked_WOE %>% 
   filter(Launder_SwWC == 1, Vol > 10) %>%
