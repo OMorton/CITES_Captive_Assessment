@@ -11,12 +11,6 @@ library(grid)
 library(png)
 
 source("2_Assessment_Pipeline/Functions.R")
-options(scipen = 999)
-
-sim.dat <- expand.grid(vol = c(1, 10, 100, 1000, 10000, 100000), 
-                       ED = c(0, 0.25, 0.5, 1, 2),
-                       FS = c(0, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6)) %>%
-  mutate(score = (log10(vol) + ED)*FS)
 
 #### Data ####
 AvesRept_checked_WOE <- data.table::fread("Outputs/Full_Check/BirdsRept/AvesRept_checked_WOE.csv", na.strings = "")
@@ -132,7 +126,16 @@ AvesRept_checked_WOE <- AvesRept_checked_WOE %>%
          
          Row = "A")
 
+sum(AvesRept_checked_WOE$Vol) # 53674762
+sum(filter(AvesRept_checked_WOE, Class == "Aves")$Vol) # 7429562
+sum(filter(AvesRept_checked_WOE, Class == "Reptilia")$Vol) # 46245200
+
+world <- ne_countries(scale = "medium", returnclass = "sf", type = "countries") 
+SOM_map <- left_join(world, AvesRept_checked_WOE %>% group_by(Exporter) %>% tally(), 
+                     by = c("iso_a2" = "Exporter")) %>% filter(!is.na(n)) %>% as.data.frame() %>%
+  select(name, iso_a2)
 write.csv(AvesRept_checked_WOE, "Outputs/Full_Check/BirdsRept/AvesRept_checked_WOE_score.csv", na = "")
+write.csv(SOM_map, "Outputs/Full_Check/BirdsRept/SOM_Country_codes.csv", na = "")
 
 
 AvesRept_checked_WOE %>% filter(Launder_SwWC == 1)
@@ -140,7 +143,6 @@ AvesRept_checked_WOE %>% filter(Launder_SwRC == 1)
 AvesRept_checked_WOE %>% filter(Launder_ReCom == 1)
 AvesRept_checked_WOE %>% filter(Launder_ReWC == 1)
 AvesRept_checked_WOE %>% filter(Launder_ReRC == 1)
-f <- AvesRept_checked_WOE %>% filter(Novel_exp == 1)
 AvesRept_checked_WOE %>% filter(Rare_exp1 == 1)
 AvesRept_checked_WOE %>% filter(Rare_exp2 == 1)
 AvesRept_checked_WOE %>% filter(Check_13 == TRUE)
@@ -158,6 +160,9 @@ inci <- AvesRept_checked_WOE %>% filter(grepl("D", Source_traded)) %>%
 
 ## 142 possible misuses
 Code_d <- AvesRept_checked_WOE %>% filter(Check_13 == TRUE) %>% select(1:20, Family, Code_D_vol, Appendix, IUCN_code)
+Code_d %>% group_by(IUCN_code) %>% summarise(n = n(), vol = sum(Code_D_vol),
+                                             sp = n_distinct(Taxon), Exp = n_distinct(Exporter))
+
 Code_d_exp <- Code_d %>% group_by(Exporter) %>% tally()
 Code_d_time <- Code_d %>% group_by(Year) %>% reframe(Vol = sum(Code_D_vol), Incidents = n())
 Code_d_fam <- Code_d %>% group_by(Class, Family) %>% reframe(Vol = sum(Code_D_vol), Incidents = n()) %>% 
@@ -232,13 +237,17 @@ pie_vol_plt <- ggplot(pie_d, aes(x="", y=vol, fill=Check_13)) +
   theme_void()+
   theme(legend.position = "none")
 
-Code_D <- ggarrange(
-  ggarrange(ggarrange(pie_rec_plt,pie_vol_plt, nrow = 2, labels = c("A.", "B.")), 
-            D_map_plt, nrow = 1, widths = c(1, 4), labels = c("", "C.")),
-  ggarrange(D_yr_plt, D_fam_plt, align = "hv", nrow = 1, labels = c("D.", "E.")),nrow =2)
+#Code_D <- ggarrange(
+ # ggarrange(ggarrange(pie_rec_plt,pie_vol_plt, nrow = 2, labels = c("A.", "B.")), 
+  #          D_map_plt, nrow = 1, widths = c(1, 4), labels = c("", "C.")),
+  #ggarrange(D_yr_plt, D_fam_plt, align = "hv", nrow = 1, labels = c("D.", "E.")),nrow =2)
+
+Code_D <- ggarrange(D_map_plt, labels = c("A.", ""),
+  ggarrange(D_yr_plt, D_fam_plt, align = "hv", nrow = 1, labels = c("B.", "C.")),
+  nrow =2, heights = c(1, .65))
 
 ggsave("Summaries/Figures/Code_D.png", Code_D, device = "png", 
-       width = 9, height = 6, bg = "white")
+       width = 10, height = 7, bg = "white")
 
 #### Laundering - mismatches ####
 
@@ -334,6 +343,10 @@ LaunderCom <- AvesRept_checked_WOE %>%
          sp = str_split_fixed(Taxon, " ", 2),
          gen = substr(Taxon, 1, 1),
          Taxon_short = paste(gen, ". ", sp[,2] ))
+
+LaunderCom %>% group_by(IUCN_code) %>% summarise(n = n(), sp = n_distinct(Taxon))
+LaunderRC %>% group_by(IUCN_code) %>% summarise(n = n(), sp = n_distinct(Taxon))
+LaunderWC %>% group_by(IUCN_code) %>% summarise(n = n(), sp = n_distinct(Taxon))
 
 dat <- data.frame(R = c("E", "E", "I", "I"), S = c("C", "W", "C", "W"), Vol = c(105,25, 40, 100))
 
@@ -516,6 +529,7 @@ Launder_swWC <- AvesRept_checked_WOE %>%
          label1 = ifelse(pos %% 2 == 0, label1, ""),
          label2 = ifelse(pos %% 2 == 1, label2, "")) 
 
+Launder_swWC %>% group_by(IUCN_code) %>% summarise(n = n(), sp = n_distinct(Taxon))
 
 
 SwWC_plt <- ggplot(Launder_swWC, aes(x = reorder(ID, pos), y = diffC, group = ROW_ID)) +
