@@ -147,7 +147,9 @@ AvesRept_checked_WOE %>% filter(Rare_exp1 == 1)
 AvesRept_checked_WOE %>% filter(Rare_exp2 == 1)
 AvesRept_checked_WOE %>% filter(Check_13 == TRUE)
 
-
+Imp_greater_than_Exp <- AvesRept_checked_WOE %>% 
+  filter(Vol*10 < Capt_Vol_Contrast + Ranch_Vol_Contrast, Vol > 10) %>% select(1:16, Appendix)
+Imp_greater_than_Exp %>% group_by(Class) %>% summarise(n_distinct(Taxon))
 
 #### Misuse of code D ####
 
