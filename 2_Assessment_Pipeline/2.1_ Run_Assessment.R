@@ -141,6 +141,7 @@ split_sp_EX <- rbind(data.frame(Taxon = "Crocodylus acutus", Year = 2005:2020, A
       data.frame(Taxon = "Melanosuchus niger", Year = 2007:2020, Appendix = "II",
                  Class = "Reptilia", Order = "Crocodylia", Family = "Crocodylidae",
                  Genus = "Crocodylus", Exporter = "BR")) 
+
 ## Distribution data
 Distr_dat <- data.table::fread("Outputs/Naming/Distr_Trait_Key.csv", na.strings = "", header = TRUE) %>%
   select(-V1) %>%
