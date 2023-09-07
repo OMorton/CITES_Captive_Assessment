@@ -921,31 +921,3 @@ ID_dataseries <- function(data = data, ID_list) {
   }
 return(Output)
 }
-
-#### Model check ####
-
-## Simple convenience function to do and present 4 posterior predictive checks.
-## Will to updated to include more/flexibility
-## model - model fitted
-## data - the data used to fit the model
-model_check <- function(model = model, data = data, 
-                        path = "Models/Scores/Aves_scores_HG_plt.png") {
-  
-  p1 <- pp_check(model) + theme_minimal() + theme(legend.position = "none")
-  p2 <- pp_check(model, type = "ecdf_overlay") + theme_minimal() + theme(legend.position = "none")
-  p3 <- pp_check(model, type = "stat_2d") + theme_minimal() + theme(legend.position = "none")
-  
-  p4 <- data %>%
-    add_residual_draws(model) %>%
-    ggplot(aes(x = .row, y = .residual)) +
-    geom_hline(yintercept = 0, linetype = "dashed") +
-    stat_pointinterval(colour = "#011f4b", alpha = .25) + 
-    theme_minimal()
-  
-  ch <- ggarrange(p1, p2, p3, p4, nrow = 2, ncol = 2,
-                  labels = c("A.", "B.", "C.", "D."))
-  
-  ggsave(paste0(path), ch, device = "png", 
-         width = 15, height = 15, bg = "white")
-  return(ch)
-}
