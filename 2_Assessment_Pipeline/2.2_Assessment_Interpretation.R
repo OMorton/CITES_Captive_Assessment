@@ -1,4 +1,4 @@
-.libPaths("C:/Packages") ## Set up for working from home.
+# .libPaths("C:/Packages") ## Set up for working from home.
 
 library(tidyverse)
 library(ggridges)
@@ -172,17 +172,17 @@ Code_d_fam <- Code_d %>% group_by(Class, Family) %>% reframe(Vol = sum(Code_D_vo
 
 D_yr_plt <- ggplot(Code_d_time, aes(x = Year)) +
   geom_col(aes(y = Incidents), colour = "black", fill = "white", linewidth = .7) +
-  geom_line(aes(y = Vol/500), colour = "darkred", linewidth = .7) +
-  geom_point(aes(y = Vol/500), colour = "darkred", size = 2) +
+  geom_line(aes(y = Vol/500), colour = "darkorange", linewidth = .7) +
+  geom_point(aes(y = Vol/500), colour = "darkorange", size = 2) +
   scale_y_continuous(name = "Incidents", 
                      sec.axis = sec_axis(~.*500, name="Volume (WOEs)")) +
   theme_minimal(base_size = 12) +
-  theme(axis.title.y.right = element_text(colour = "darkred"))
+  theme(axis.title.y.right = element_text(colour = "darkorange"))
 
 D_fam_plt <- ggplot(Code_d_fam, aes(x = reorder(Family, ord))) +
   geom_col(aes(y = Incidents), colour = "black", fill = "white", linewidth = .7) +
-  geom_line(aes(y = Vol/500), colour = "darkred", linewidth = .7) +
-  geom_point(aes(y = Vol/500), colour = "darkred", size = 2) +
+  geom_line(aes(y = Vol/500), colour = "darkorange", linewidth = .7) +
+  geom_point(aes(y = Vol/500), colour = "darkorange", size = 2) +
   geom_segment(aes(x = 1, xend = 8, y = 60, yend = 60)) +
   geom_segment(aes(x = 1, xend = 1, y = 60, yend = 57)) +
   geom_segment(aes(x = 8, xend = 8, y = 60, yend = 57)) +
@@ -195,7 +195,7 @@ D_fam_plt <- ggplot(Code_d_fam, aes(x = reorder(Family, ord))) +
                      sec.axis = sec_axis(~.*500, name="Volume (WOEs)")) +
   xlab("Family") +
   theme_minimal(base_size = 12) +
-  theme(axis.title.y.right = element_text(colour = "darkred"),
+  theme(axis.title.y.right = element_text(colour = "darkorange"),
         axis.text.x = element_text(angle = 45, hjust = 1))
 
 world <- ne_countries(scale = "medium", returnclass = "sf", type = "countries") 
@@ -378,7 +378,7 @@ LaunderWC_plt <- ggplot(LaunderWC, aes(x = reorder(ID, pos), y = diffC, group = 
   geom_point(size = 2, shape = 21, fill = "white") +
   geom_point(aes(y = diffW), size = 2)  +
   geom_point(aes(y = equal_diff), size = 2) +
-  scale_colour_manual(values = c("darkred", "black"), labels = c("E[CDFR] > I[CDFR]", "E[WUXR] > I[WUXR]")) +
+  scale_colour_manual(values = c("darkorange", "black"), labels = c("E[CDFR] > I[CDFR]", "E[WUXR] > I[WUXR]")) +
   scale_y_log10(limits = c(1, 1300000)) +
   scale_x_discrete(labels = LaunderWC$Taxon_short) +
   geom_text(aes(x = ID, label = paste0(Exporter, ", ", Year)),
@@ -402,7 +402,7 @@ LaunderRC_plt <- ggplot(LaunderRC, aes(x = reorder(ID, pos), y = diffC, group = 
   geom_point(size = 2, shape = 21, fill = "white") +
   geom_point(aes(y = diffR), size = 2)  +
   geom_point(aes(y = equal_diff), size = 2) +
-  scale_colour_manual(values = c("darkred", "black"),  labels = c("E[CDF] > I[CDF]", "E[R] > I[R]")) +
+  scale_colour_manual(values = c("darkorange", "black"),  labels = c("E[CDF] > I[CDF]", "E[R] > I[R]")) +
   scale_y_log10(limits = c(10, 250000)) +
   scale_x_discrete(labels = LaunderRC$Taxon_short) +
   geom_text(aes(x = ID, label = paste0(Exporter, ", ", Year)),
@@ -427,7 +427,7 @@ LaunderCom_plt <- ggplot(LaunderCom, aes(x = pos, y = diffC, group = ROW_ID, col
   geom_point(size = 2, shape = 21, fill = "white") +
   geom_point(aes(y = diffNC), size = 2, alpha = .5)  +
   geom_point(aes(y = equal_diff), size = 2, alpha = .5) +
-  scale_colour_manual(values = c("black", "darkred"), 
+  scale_colour_manual(values = c("black", "darkorange"), 
                       labels = c("E[Commercial] > I[Commerical]", "E[Non-comm] > I[Non-comm]")) +
   scale_y_log10(limits = c(1, 200000), breaks = c(1, 100, 10000)) +
   coord_cartesian(xlim = c(-3, 150), expand = FALSE) +
@@ -681,7 +681,7 @@ Concept_map <- left_join(world, Concept_dat, by = c("iso_a2" = "Exporter"))
 Concept_map_plt <- ggplot() + 
   geom_sf(data = Concept_map, aes(fill = cat), colour = "black") +
   scale_fill_manual(na.value="grey85", breaks = c("Improbable occurence", "Probable occurence", "Within range"), 
-                    values = c("darkred", "grey25", "darkgreen")) +
+                    values = c("darkorange", "grey25", "dodgerblue")) +
   coord_sf(ylim = c(-50, 90), datum = NA) +
   theme_classic(base_size = 10) +
   theme(legend.position = "right", legend.justification = "bottom", legend.title = element_blank())
@@ -718,7 +718,7 @@ RRept_map_plt <- ggplot() + geom_sf(data = RRept_map, aes(fill = tot), colour = 
 
 Aves_range_bars <- ggplot(filter(Source_dat, Class == "Aves"), aes(cat, tot, fill = cat)) +
   geom_col(width = 1, colour = "black") +
-  scale_fill_manual(values = c( "darkred", "grey25", "darkgreen")) +
+  scale_fill_manual(values = c("darkorange", "grey25", "dodgerblue")) +
   scale_x_discrete(labels = c("Impr Occ", "Pr Occ", "w/range")) +
   # scale_y_log10(breaks = c(10^1, 10^3, 10^5, 10^7),
   #   labels = expression(10^1, 10^3, 10^5, 10^7)) +
@@ -730,7 +730,7 @@ Aves_range_bars <- ggplot(filter(Source_dat, Class == "Aves"), aes(cat, tot, fil
 
 Rept_range_bars <- ggplot(filter(Source_dat, Class == "Reptilia"), aes(cat, tot, fill = cat)) +
   geom_col(width = 1, colour = "black") +
-  scale_fill_manual(values = c( "darkred", "grey25", "darkgreen")) +
+  scale_fill_manual(values = c("darkorange", "grey25", "dodgerblue")) +
   scale_x_discrete(labels = c("Impr Occ", "Pr Occ", "w/range")) +
   #scale_y_log10(breaks = c(10^1, 10^3, 10^5, 10^7),
   #            labels = expression(10^1, 10^3, 10^5, 10^7)) +
@@ -883,7 +883,7 @@ AvesRept_checked_WOE %>% group_by(Class, App_sum, Score) %>% tally() %>% filter(
 
 score_tally_plt <- ggplot(AvesRept_checked_WOE, aes(Score, sc_order, colour = App_sum)) + 
   geom_point(shape = 15) +
-  scale_color_manual(values = c("tomato", "black"), name = "Appendix") +
+  scale_color_manual(values = c("dodgerblue", "black"), name = "Appendix") +
   xlab("Failed criteria") +
   ylab("Cumulative records") +
   theme_minimal(base_size = 14) +

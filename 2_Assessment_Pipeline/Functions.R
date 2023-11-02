@@ -5,7 +5,6 @@
 
 #### Packages and presets ####
 options(scipen = 999, na.action = "na.pass")
-.libPaths("C:/Packages") ## Set up for working from home.
 
 library(tidyverse)
 library(tidybayes)
